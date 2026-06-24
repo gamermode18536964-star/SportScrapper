@@ -110,7 +110,7 @@ jobs:
 
               # ── Step 4: Submit ──────────────────────────────
               print("Submitting login...")
-              page.click(".modal-login button[type='submit'], .modal-login input[type='submit'], .modal-login .btn-login, .modal-login .login-btn, .modal-login button:has-text('Login'), .modal-login button:has-text('Sign In')")
+              page.click(".modal-login .button-primary")
               time.sleep(4)
               page.screenshot(path="04_after_login.png")
 
