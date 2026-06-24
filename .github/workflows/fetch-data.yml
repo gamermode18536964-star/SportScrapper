@@ -2,13 +2,14 @@ name: Fetch SDQL Data
 
 on:
   schedule:
-    # Runs at 10:00 AM UTC daily (adjust timezone offset if needed)
     - cron: '0 10 * * *'
-  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repo
@@ -16,22 +17,35 @@ jobs:
 
       - name: Fetch MLB data
         run: |
-          curl -s "https://s3.sportsdatabase.com/mlb/query?sdql=team%20and%20date%20and%20o:team%20and%20site%20and%20line%20and%20total%20and%20ou%20and%20runs%20and%20o:runs%20and%20season&output=json&api_key=${{ secrets.SDQL_API_KEY }}" \
-            -o mlb_raw.json
+          curl -v "https://s3.sportsdatabase.com/mlb/query?sdql=team%20and%20date%20and%20o:team%20and%20site%20and%20line%20and%20total%20and%20ou%20and%20runs%20and%20o:runs%20and%20season&output=json&api_key=${{ secrets.SDQL_API_KEY }}" \
+            -o mlb_raw.json 2>&1 | head -60
+          echo "--- MLB response ---"
+          cat mlb_raw.json
 
       - name: Fetch WNBA data
         run: |
-          curl -s "https://s3.sportsdatabase.com/wnba/query?sdql=team%20and%20date%20and%20o:team%20and%20site%20and%20line%20and%20total%20and%20ou%20and%20points%20and%20o:points%20and%20season&output=json&api_key=${{ secrets.SDQL_API_KEY }}" \
-            -o wnba_raw.json
+          curl -v "https://s3.sportsdatabase.com/wnba/query?sdql=team%20and%20date%20and%20o:team%20and%20site%20and%20line%20and%20total%20and%20ou%20and%20points%20and%20o:points%20and%20season&output=json&api_key=${{ secrets.SDQL_API_KEY }}" \
+            -o wnba_raw.json 2>&1 | head -60
+          echo "--- WNBA response ---"
+          cat wnba_raw.json
 
       - name: Merge into data.json
         run: |
           python3 - <<'EOF'
-          import json, datetime
+          import json, datetime, sys
 
           def load(path):
               with open(path) as f:
-                  return json.load(f)
+                  content = f.read().strip()
+              if not content:
+                  print(f"ERROR: {path} is empty", file=sys.stderr)
+                  sys.exit(1)
+              try:
+                  return json.loads(content)
+              except json.JSONDecodeError as e:
+                  print(f"ERROR: {path} is not valid JSON: {e}", file=sys.stderr)
+                  print(f"Content was: {content[:500]}", file=sys.stderr)
+                  sys.exit(1)
 
           mlb  = load('mlb_raw.json')
           wnba = load('wnba_raw.json')
