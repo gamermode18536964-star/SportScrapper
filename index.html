@@ -86,6 +86,10 @@
     .footer { text-align:center; font-size:12px; color:var(--lo); margin-top:2rem; border-top:.5px solid var(--border); padding-top:1.25rem; }
     .footer a { color:var(--blue); text-decoration:none; }
 
+    .quick-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:.5rem; }
+    .q-btn { padding:4px 12px; background:var(--row); border:.5px solid var(--border); border-radius:4px; font-size:12px; color:var(--lo); cursor:pointer; font-family:inherit; transition:all .15s; }
+    .q-btn:hover  { border-color:var(--gbd); color:var(--green); }
+    .q-btn.active { background:var(--gbg); border-color:var(--gbd); color:var(--green); }
     @keyframes spin { to { transform:rotate(360deg); } }
     .spinning { display:inline-block; animation:spin 1s linear infinite; }
     @media(max-width:520px){ .shell{ padding:1.25rem 1rem 3rem; } }
@@ -117,6 +121,9 @@
         <input type="text" id="searchInput" placeholder="Filter by team, starter, date…" oninput="renderTable()" />
       </div>
     </div>
+
+    <div class="card-label" style="margin-top:.75rem">Quick filters</div>
+    <div class="quick-row" id="quickRow"></div>
   </div>
 
   <div class="card" id="resultsCard">
@@ -155,6 +162,7 @@
         ? 'Updated ' + new Date(d.updated).toLocaleString(undefined, { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
         : 'Data loaded';
       document.getElementById('updateBadge').textContent = ts;
+      renderQuickButtons();
       renderTable();
     } catch(e) {
       document.getElementById('updateBadge').textContent = 'Error loading data';
@@ -165,10 +173,11 @@
 
   // ── Sport toggle ─────────────────────────────────
   function setSport(s) {
-    sport = s; sortCol = -1; sortDir = 'asc';
+    sport = s; sortCol = -1; sortDir = 'asc'; pickFilter = null;
     document.querySelectorAll('.sport-btn').forEach(function(b){ b.classList.remove('active'); });
     document.getElementById('btn-' + s).classList.add('active');
     document.getElementById('searchInput').value = '';
+    renderQuickButtons();
     renderTable();
   }
 
@@ -177,9 +186,17 @@
     var data = allData[sport];
     if (!data || !data.rows) return [];
     var search = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (!search) return data.rows;
+
     return data.rows.filter(function(row) {
-      return row.some(function(c){ return String(c||'').toLowerCase().includes(search); });
+      // Text search
+      if (search && !row.some(function(c){ return String(c||'').toLowerCase().includes(search); })) return false;
+      // Pick column filter
+      if (pickFilter) {
+        var headers = data.headers;
+        var colIdx = headers.findIndex(function(h){ return h.toUpperCase().includes(pickFilter.toUpperCase()); });
+        if (colIdx >= 0 && (row[colIdx] === '-' || row[colIdx] === '' || row[colIdx] == null)) return false;
+      }
+      return true;
     });
   }
 
@@ -264,6 +281,57 @@
     a.download = sport + '_picks_' + new Date().toISOString().slice(0,10) + '.csv';
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(a.href);
+  }
+
+
+  // ── Quick filters ─────────────────────────────────
+  var QUICK = {
+    mlb: [
+      { label: 'All games',      fn: function(){ clearSearch(); } },
+      { label: 'Has ML pick',    fn: function(){ setSearch(''); setPickFilter('ML'); } },
+      { label: 'Has OU pick',    fn: function(){ setSearch(''); setPickFilter('OU'); } },
+      { label: 'Home teams',     fn: function(){ setSearch(''); setPickFilter(null); } },
+      { label: 'Favorites',      fn: function(){ setSearch('-1'); } },
+      { label: 'Dogs',           fn: function(){ setSearch('+1'); } },
+    ],
+    wnba: [
+      { label: 'All games',      fn: function(){ clearSearch(); } },
+      { label: 'Has ATS pick',   fn: function(){ setSearch(''); setPickFilter('ATS'); } },
+      { label: 'Has OU pick',    fn: function(){ setSearch(''); setPickFilter('OU'); } },
+      { label: 'Has SU pick',    fn: function(){ setSearch(''); setPickFilter('SU'); } },
+    ]
+  };
+  var activeQuick = null;
+  var pickFilter  = null;
+
+  function renderQuickButtons() {
+    var container = document.getElementById('quickRow');
+    var btns = QUICK[sport] || [];
+    container.innerHTML = btns.map(function(b, i) {
+      return '<button class="q-btn" onclick="runQuick(' + i + ')">' + b.label + '</button>';
+    }).join('');
+  }
+
+  function runQuick(i) {
+    pickFilter = null;
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.q-btn').forEach(function(b, j){ b.classList.toggle('active', j === i); });
+    var btn = (QUICK[sport] || [])[i];
+    if (btn) btn.fn();
+    renderTable();
+  }
+
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    pickFilter = null;
+  }
+
+  function setSearch(val) {
+    document.getElementById('searchInput').value = val;
+  }
+
+  function setPickFilter(col) {
+    pickFilter = col;
   }
 
   function csvCell(v) {
