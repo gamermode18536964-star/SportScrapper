@@ -130,8 +130,8 @@ jobs:
                   print("✗ Login may have failed — 'My Account' not found in page")
 
               # ── Step 5: Scrape active schedule pages ────────
-              mlb_data  = scrape_schedule(page, "mlb",  "https://killersports.com/trend/active_schedule?sport=MLB")
-              wnba_data = scrape_schedule(page, "wnba", "https://killersports.com/trend/active_schedule?sport=WNBA")
+              mlb_data  = scrape_schedule(page, "mlb",  "https://killersports.com/saved-trend-alerts?filter=MLB")
+              wnba_data = scrape_schedule(page, "wnba", "https://killersports.com/saved-trend-alerts?filter=WNBA")
 
               browser.close()
 
