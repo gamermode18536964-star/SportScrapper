@@ -108,7 +108,15 @@ jobs:
               page.fill(".modal-login input[type='password']", password)
               page.screenshot(path="03_filled.png")
 
-              # ── Step 4: Submit ──────────────────────────────
+              # ── Step 4: Dismiss cookie consent banner ───────
+              try:
+                  page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
+                  print("Cookie consent dismissed")
+              except:
+                  pass
+              time.sleep(0.5)
+
+              # ── Step 5: Submit ──────────────────────────────
               print("Submitting login...")
               page.click(".modal-login .button-primary")
               time.sleep(4)
