@@ -140,6 +140,13 @@
       <button class="sport-btn"        id="btn-ncaab" onclick="setSport('ncaab')">NCAAB</button>
     </div>
 
+    <div class="card-label" style="margin-top:.75rem">Data source</div>
+    <div class="sport-row" id="sourceRow">
+      <button class="sport-btn active" id="src-saved"  onclick="setSource('saved')">My Systems</button>
+      <button class="sport-btn"        id="src-ai"     onclick="setSource('ai')">AI Trends</button>
+      <button class="sport-btn"        id="src-kspro"  onclick="setSource('kspro')">KS Pro</button>
+    </div>
+
     <div class="filter-grid">
       <div class="filter-group">
         <label>Search</label>
@@ -207,7 +214,12 @@
 </div>
 
 <script>
-var allData   = { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null };
+var allData   = {
+    saved:  { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
+    ai:     { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
+    kspro:  { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null }
+  };
+  var source = 'saved';
 var sport     = 'mlb';
 var sortCol   = -1;
 var sortDir   = 'asc';
@@ -289,7 +301,9 @@ var CHIPS = {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
     ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
-      allData[s] = d[s] || { headers:[], rows:[] };
+      ['saved','ai','kspro'].forEach(function(src) {
+        allData[src][s] = (d[src] && d[src][s]) ? d[src][s] : { headers:[], rows:[] };
+      });
     });
     var ts = d.updated
       ? 'Updated ' + new Date(d.updated).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
@@ -308,8 +322,11 @@ var CHIPS = {
 
 // ── Hidden cols init ──────────────────────────────
 function initHiddenCols() {
-  ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
-    hiddenCols[s] = new Set();
+  ['saved','ai','kspro'].forEach(function(src) {
+    hiddenCols[src] = {};
+    ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
+      hiddenCols[src][s] = new Set();
+    });
   });
 }
 
@@ -324,7 +341,18 @@ function setSport(s) {
   renderTable();
 }
 
-// ── Chips ─────────────────────────────────────────
+// ── Source toggle ────────────────────────────────
+  function setSource(s) {
+    source = s; sortCol = -1; sortDir = 'asc';
+    document.querySelectorAll('#sourceRow .sport-btn').forEach(function(b){ b.classList.remove('active'); });
+    var el = document.getElementById('src-' + s); if(el) el.classList.add('active');
+    clearFilters(true);
+    renderChips();
+    renderColToggles();
+    renderTable();
+  }
+
+  // ── Chips ─────────────────────────────────────────
 function renderChips() {
   var row = document.getElementById('chipRow');
   row.innerHTML = (CHIPS[sport] || []).map(function(c, i) {
@@ -367,9 +395,9 @@ function toggleColPanel() {
 }
 
 function renderColToggles() {
-  var data = allData[sport];
-  if (!data || !data.headers.length) return;
-  var hidden = hiddenCols[sport];
+  var data = allData[source][sport];
+  if (!data || !data.headers || !data.headers.length) return;
+  var hidden = hiddenCols[source][sport];
   var container = document.getElementById('colToggles');
   container.innerHTML = data.headers.map(function(h, i) {
     var visible = !hidden.has(i);
@@ -380,7 +408,7 @@ function renderColToggles() {
 }
 
 function toggleCol(i) {
-  var hidden = hiddenCols[sport];
+  var hidden = hiddenCols[source][sport];
   if (hidden.has(i)) hidden.delete(i); else hidden.add(i);
   renderColToggles();
   renderTable();
@@ -406,7 +434,7 @@ function parseDate(str) {
 }
 
 function getFiltered() {
-  var data = allData[sport];
+  var data = allData[source][sport];
   if (!data || !data.rows) return [];
 
   var search   = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -469,8 +497,8 @@ function getFiltered() {
 
 // ── Render ────────────────────────────────────────
 function renderTable() {
-  var data = allData[sport];
-  if (!data || !data.headers.length) {
+  var data = allData[source][sport];
+  if (!data || !data.headers || !data.headers.length) {
     document.getElementById('tableArea').innerHTML =
       '<div class="state"><i class="ti ti-mood-empty"></i>No data yet.</div>';
     return;
@@ -478,7 +506,7 @@ function renderTable() {
 
   var filtered = getFiltered();
   var rows = filtered.slice();
-  var hidden = hiddenCols[sport];
+  var hidden = hiddenCols[source][sport];
   var headers = data.headers.filter(function(_, i){ return !hidden.has(i); });
   var colMap  = data.headers.map(function(_, i){ return i; }).filter(function(i){ return !hidden.has(i); });
 
@@ -536,7 +564,7 @@ function sortBy(col) {
 
 // ── Download CSV ──────────────────────────────────
 function downloadCSV() {
-  var data = allData[sport];
+  var data = allData[source][sport];
   if (!data) return;
   var hidden  = hiddenCols[sport];
   var colMap  = data.headers.map(function(_, i){ return i; }).filter(function(i){ return !hidden.has(i); });
