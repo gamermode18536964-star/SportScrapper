@@ -104,6 +104,10 @@
     .footer{text-align:center;font-size:12px;color:var(--lo);margin-top:2rem;border-top:.5px solid var(--border);padding-top:1.25rem}
     .footer a{color:var(--blue);text-decoration:none}
 
+
+    .col-chip{padding:3px 10px;border-radius:4px;border:.5px solid var(--border);background:var(--bg);color:var(--lo);font-size:12px;cursor:pointer;transition:all .15s;font-family:inherit}
+    .col-chip:hover{border-color:var(--bbd);color:var(--blue)}
+    .col-chip-on{background:var(--bbg);border-color:var(--bbd);color:var(--blue)}
     @keyframes spin{to{transform:rotate(360deg)}}
     .spinning{display:inline-block;animation:spin 1s linear infinite}
   </style>
@@ -119,6 +123,9 @@
     </div>
     <div class="topbar-right">
       <span class="update-badge" id="updateBadge">Loading…</span>
+      <div class="icon-btn" id="builderBtn" onclick="openBuilder()" title="Build custom table">
+        <i class="ti ti-layout-columns"></i>
+      </div>
       <div class="icon-btn" id="dateToggleBtn" onclick="toggleDatePanel()" title="Date range">
         <i class="ti ti-calendar"></i>
       </div>
@@ -211,6 +218,47 @@
     Historical data preserved across updates.
     Hosted on <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>.
   </div>
+<!-- ── Builder Modal ─────────────────────────────── -->
+<div id="builderOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;overflow-y:auto;padding:2rem 1rem">
+  <div style="max-width:780px;margin:0 auto;background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:.5px solid var(--border)">
+      <div>
+        <div style="font-size:16px;font-weight:500">Build Custom Table</div>
+        <div style="font-size:12px;color:var(--lo);margin-top:2px">Pick columns from any source to combine into one view</div>
+      </div>
+      <div class="icon-btn" onclick="closeBuilder()"><i class="ti ti-x"></i></div>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <div class="card-label">Sport</div>
+      <div class="sport-row" id="builderSportRow" style="flex-wrap:wrap"></div>
+    </div>
+
+    <div id="builderSources" style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.25rem"></div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:1rem;border-top:.5px solid var(--border)">
+      <button onclick="clearBuilder()" style="padding:6px 16px;background:transparent;border:.5px solid var(--border);border-radius:6px;color:var(--lo);font-size:13px;cursor:pointer;font-family:inherit">Clear all</button>
+      <button onclick="applyBuilder()" style="padding:6px 16px;background:var(--gbd);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500">Apply &amp; View Table</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Custom Table View ──────────────────────────── -->
+<div id="customTableSection" style="display:none" class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-size:14px;font-weight:500;color:var(--green)">Custom Table</span>
+      <span id="customTableMeta" style="font-size:12px;color:var(--lo);margin-left:8px"></span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openBuilder()" style="padding:4px 12px;background:var(--row);border:.5px solid var(--border);border-radius:5px;color:var(--lo);font-size:12px;cursor:pointer;font-family:inherit">Edit</button>
+      <button onclick="downloadCustomCSV()" class="dl-btn"><i class="ti ti-download"></i> CSV</button>
+      <button onclick="closeCustomTable()" style="padding:4px 12px;background:var(--rbg);border:.5px solid var(--rbd);border-radius:5px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit">Close</button>
+    </div>
+  </div>
+  <div id="customTableArea"></div>
+</div>
+
 </div>
 
 <script>
