@@ -637,6 +637,138 @@ function csvCell(v) {
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+
+// ══════════════════════════════════════════════════
+// CUSTOM TABLE BUILDER
+// ══════════════════════════════════════════════════
+var builderSport      = 'mlb';
+var builderSelections = {};
+var customTableData   = null;
+var SOURCE_LABELS = { saved:'My Systems', ai:'AI Trends', kspro:'KS Pro' };
+var SOURCE_COLORS = { saved:'var(--green)', ai:'var(--blue)', kspro:'var(--amber)' };
+var SOURCE_BDS    = { saved:'var(--gbd)',   ai:'var(--bbd)',  kspro:'var(--abd)' };
+var SOURCE_BGS    = { saved:'var(--gbg)',   ai:'var(--bbg)',  kspro:'var(--abg)' };
+
+function openBuilder() {
+  builderSport = sport;
+  document.getElementById('builderOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  renderBuilderSportRow();
+  renderBuilderSources();
+}
+function closeBuilder() {
+  document.getElementById('builderOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function renderBuilderSportRow() {
+  var sports = ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'];
+  var labels = {mlb:'MLB',wnba:'WNBA',nfl:'NFL',nba:'NBA',nhl:'NHL',ncaaf:'NCAAF',ncaab:'NCAAB'};
+  document.getElementById('builderSportRow').innerHTML = sports.map(function(s) {
+    return '<button class="sport-btn' + (s===builderSport?' active':'') + '" onclick="setBuilderSport(\'' + s + '\')">' + labels[s] + '</button>';
+  }).join('');
+}
+function setBuilderSport(s) {
+  builderSport = s; builderSelections = {};
+  renderBuilderSportRow(); renderBuilderSources();
+}
+function renderBuilderSources() {
+  var container = document.getElementById('builderSources');
+  if (!container) return;
+  container.innerHTML = ['saved','ai','kspro'].map(function(src) {
+    var data    = allData[src] && allData[src][builderSport];
+    var headers = (data && data.headers) ? data.headers : [];
+    var color   = SOURCE_COLORS[src], bd = SOURCE_BDS[src], bg = SOURCE_BGS[src];
+    var label   = SOURCE_LABELS[src];
+    if (!headers.length) {
+      return '<div style="background:var(--row);border:.5px solid var(--border);border-radius:8px;padding:1rem"><div style="font-size:13px;font-weight:500;color:'+color+';margin-bottom:.3rem">'+label+'</div><div style="font-size:12px;color:var(--lo)">No data for this sport yet.</div></div>';
+    }
+    var chips = headers.map(function(h, i) {
+      var key = src+':'+i, active = !!builderSelections[key];
+      return '<button onclick="toggleBuilderCol(\''+key+'\')" style="padding:3px 10px;border-radius:4px;border:.5px solid '+(active?bd:'var(--border)')+';background:'+(active?bg:'var(--bg)')+';color:'+(active?color:'var(--lo)')+';font-size:12px;cursor:pointer;font-family:inherit;margin:2px;transition:all .15s">'+esc(h)+'</button>';
+    }).join('');
+    return '<div style="background:var(--row);border:.5px solid var(--border);border-radius:8px;padding:1rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem"><div style="font-size:13px;font-weight:500;color:'+color+'">'+label+'</div><button onclick="selectAllSource(\''+src+'\','+headers.length+')" style="font-size:11px;color:var(--lo);background:transparent;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">Select all</button></div><div>'+chips+'</div></div>';
+  }).join('');
+}
+function toggleBuilderCol(key) {
+  if (builderSelections[key]) delete builderSelections[key]; else builderSelections[key]=true;
+  renderBuilderSources();
+}
+function selectAllSource(src, count) {
+  for (var i=0;i<count;i++) builderSelections[src+':'+i]=true;
+  renderBuilderSources();
+}
+function clearBuilder() { builderSelections={}; renderBuilderSources(); }
+function applyBuilder() {
+  var selected = Object.keys(builderSelections);
+  if (!selected.length) { alert('Select at least one column.'); return; }
+  var teamMap = {};
+  ['saved','ai','kspro'].forEach(function(src) {
+    var data = allData[src] && allData[src][builderSport];
+    if (!data || !data.rows) return;
+    var ti = data.headers.findIndex(function(h){ return /^team$/i.test(h.trim()); });
+    if (ti<0) ti=1;
+    data.rows.forEach(function(row) {
+      var team=(row[ti]||'').trim();
+      if (!team||team==='@') return;
+      if (!teamMap[team]) teamMap[team]={};
+      if (!teamMap[team][src]) teamMap[team][src]={row:row,headers:data.headers};
+    });
+  });
+  var colDefs=[{src:null,colIdx:-1,label:'Team'}];
+  selected.forEach(function(key) {
+    var parts=key.split(':'),src=parts[0],ci=parseInt(parts[1]);
+    var data=allData[src]&&allData[src][builderSport];
+    if (!data) return;
+    var h=(data.headers[ci]||'').trim();
+    if (/^(team|date|@)$/i.test(h)) return;
+    colDefs.push({src:src,colIdx:ci,label:h+' ('+SOURCE_LABELS[src]+')'});
+  });
+  var teams=Object.keys(teamMap).sort();
+  var rows=teams.map(function(team) {
+    return colDefs.map(function(def) {
+      if (!def.src) return team;
+      var sd=teamMap[team]&&teamMap[team][def.src];
+      if (!sd) return '-';
+      var v=sd.row[def.colIdx];
+      return (v!=null&&v!=='') ? v : '-';
+    });
+  });
+  customTableData={headers:colDefs.map(function(d){return d.label;}),rows:rows,sport:builderSport};
+  closeBuilder();
+  var section=document.getElementById('customTableSection');
+  section.style.display='block';
+  renderCustomTable();
+  section.scrollIntoView({behavior:'smooth'});
+}
+function renderCustomTable() {
+  if (!customTableData) return;
+  var d=customTableData;
+  document.getElementById('customTableMeta').textContent=d.sport.toUpperCase()+' · '+d.rows.length+' teams · '+(d.headers.length-1)+' cols';
+  var thead='<thead><tr>'+d.headers.map(function(h){return '<th style="cursor:default">'+esc(h)+'</th>';}).join('')+'</tr></thead>';
+  var tbody='<tbody>'+d.rows.map(function(row){
+    return '<tr>'+row.map(function(c,i){
+      var val=c!=null?c:'';
+      return '<td'+(i>0&&val&&val!=='-'?' class="has-pick"':'')+'>'+esc(val)+'</td>';
+    }).join('')+'</tr>';
+  }).join('')+'</tbody>';
+  document.getElementById('customTableArea').innerHTML='<div class="table-wrap"><table>'+thead+tbody+'</table></div>';
+}
+function closeCustomTable() {
+  document.getElementById('customTableSection').style.display='none';
+  customTableData=null;
+}
+function downloadCustomCSV() {
+  if (!customTableData) return;
+  var lines=[customTableData.headers.map(csvCell).join(',')];
+  customTableData.rows.forEach(function(row){lines.push(row.map(function(c){return csvCell(c!=null?c:'');}).join(','));});
+  var blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='custom_'+customTableData.sport+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+}
+document.getElementById('builderOverlay').addEventListener('click',function(e){if(e.target===this)closeBuilder();});
+
 </script>
 </body>
 </html>
