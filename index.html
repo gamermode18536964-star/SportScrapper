@@ -619,8 +619,9 @@ function downloadCSV() {
   var headers = colMap.map(function(i){ return data.headers[i]; });
   var rows    = getFiltered();
   var lines   = [headers.map(csvCell).join(',')];
-  rows.forEach(function(row) {
-    lines.push(colMap.map(function(i){ return csvCell(row[i] != null ? row[i] : ''); }).join(','));
+  var cleanRows = sanitizeDates(rows.map(function(row){ return colMap.map(function(i){ return row[i]; }); }));
+  cleanRows.forEach(function(row) {
+    lines.push(row.map(function(c){ return csvCell(c != null ? c : ''); }).join(','));
   });
   var blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
   var a = document.createElement('a');
@@ -628,6 +629,16 @@ function downloadCSV() {
   a.download = sport + '_picks_' + new Date().toISOString().slice(0,10) + '.csv';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+function sanitizeDates(rows) {
+  var dateRe = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),/;
+  return rows.map(function(row) {
+    return row.map(function(cell) {
+      var s = String(cell != null ? cell : '');
+      return dateRe.test(s) ? s.replace(/,/g, ' ') : cell;
+    });
+  });
 }
 
 function csvCell(v) {
@@ -813,7 +824,7 @@ function closeCustomTable() {
 function downloadCustomCSV() {
   if (!customTableData) return;
   var lines=[customTableData.headers.map(csvCell).join(',')];
-  customTableData.rows.forEach(function(row){lines.push(row.map(function(c){return csvCell(c!=null?c:'');}).join(','));});
+  sanitizeDates(customTableData.rows).forEach(function(row){lines.push(row.map(function(c){return csvCell(c!=null?c:'');}).join(','));});
   var blob=new Blob([lines.join('\r\n')],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='custom_'+customTableData.sport+'_'+new Date().toISOString().slice(0,10)+'.csv';
