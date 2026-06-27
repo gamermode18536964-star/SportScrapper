@@ -706,13 +706,37 @@ function applyBuilder() {
   ['saved','ai','kspro'].forEach(function(src) {
     var data = allData[src] && allData[src][builderSport];
     if (!data || !data.rows) return;
-    var ti = data.headers.findIndex(function(h){ return /^team$/i.test(h.trim()); });
+    var ti      = data.headers.findIndex(function(h){ return /^team$/i.test(h.trim()); });
+    var dateIdx = 0; // date is always col 0
     if (ti<0) ti=1;
+
+    var currentDate = '';
+    var currentHomeTeam = '';
+
     data.rows.forEach(function(row) {
-      var team=(row[ti]||'').trim();
-      if (!team||team==='@') return;
-      if (!teamMap[team]) teamMap[team]={};
-      if (!teamMap[team][src]) teamMap[team][src]={row:row,headers:data.headers};
+      var isAt = row[0] === '@';
+      var team = (row[ti]||'').trim();
+      if (!team) return;
+
+      if (!isAt) {
+        // Home team row — record date
+        currentDate = row[dateIdx] || '';
+        currentHomeTeam = team;
+        // Store with resolved date
+        var patchedRow = row.slice();
+        patchedRow[dateIdx] = currentDate;
+        if (!teamMap[team]) teamMap[team] = {};
+        teamMap[team][src] = { row: patchedRow, headers: data.headers, date: currentDate };
+      } else {
+        // Away team row — use @ as team col but date col has '@', fix it
+        var patchedRow = row.slice();
+        patchedRow[dateIdx] = currentDate; // carry forward the game date
+        // team name is in ti column
+        if (!teamMap[team]) teamMap[team] = {};
+        if (!teamMap[team][src]) {
+          teamMap[team][src] = { row: patchedRow, headers: data.headers, date: currentDate };
+        }
+      }
     });
   });
   var colDefs=[{src:null,colIdx:-1,label:'Team'}];
