@@ -35,6 +35,16 @@ jobs:
           username = os.environ["KS_USERNAME"]
           password = os.environ["KS_PASSWORD"]
 
+          SPORTS = {
+              "mlb":   "https://killersports.com/saved-trend-alerts?filter=MLB",
+              "wnba":  "https://killersports.com/saved-trend-alerts?filter=WNBA",
+              "nfl":   "https://killersports.com/saved-trend-alerts?filter=NFL",
+              "nba":   "https://killersports.com/saved-trend-alerts?filter=NBA",
+              "nhl":   "https://killersports.com/saved-trend-alerts?filter=NHL",
+              "ncaaf": "https://killersports.com/saved-trend-alerts?filter=NCAAFB",
+              "ncaab": "https://killersports.com/saved-trend-alerts?filter=NCAABB",
+          }
+
           def scrape_schedule(page, sport, url):
               print(f"\nFetching {sport}: {url}")
               page.goto(url, wait_until="networkidle", timeout=60000)
@@ -42,6 +52,12 @@ jobs:
               page.screenshot(path=f"{sport}_schedule.png")
 
               html = page.content()
+
+              # Check for no trends message
+              if "No Trends to Show" in html:
+                  print(f"  {sport}: No Trends to Show — skipping")
+                  return None
+
               soup = BeautifulSoup(html, "html.parser")
               tables = soup.find_all("table")
               print(f"  Found {len(tables)} table(s)")
@@ -49,7 +65,7 @@ jobs:
               if not tables:
                   title = soup.find("title")
                   print(f"  Page title: {title.text if title else 'unknown'}")
-                  return {"headers": [], "rows": []}
+                  return None
 
               table = max(tables, key=lambda t: len(t.find_all("tr")))
 
@@ -73,19 +89,19 @@ jobs:
               return {"headers": headers, "rows": rows}
 
           def merge(existing, fresh):
-              """Merge fresh data into existing, avoiding duplicate dates."""
+              if fresh is None:
+                  print("  No fresh data — keeping existing")
+                  return existing
               if not fresh["rows"]:
                   return existing
               if not existing["rows"]:
                   return fresh
 
-              # Determine today's date label from fresh data
               today_labels = set()
               for row in fresh["rows"]:
                   if row[0] and row[0] != "@":
                       today_labels.add(row[0])
 
-              # Remove today's rows from existing (will be replaced by fresh)
               kept = []
               skip = False
               for row in existing["rows"]:
@@ -100,7 +116,7 @@ jobs:
               }
 
           # Load existing data.json
-          existing = {"mlb": {"headers": [], "rows": []}, "wnba": {"headers": [], "rows": []}}
+          existing = {}
           try:
               with open("data.json") as f:
                   existing = json.load(f)
@@ -117,7 +133,6 @@ jobs:
               print("Loading KillerSports...")
               page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
               time.sleep(2)
-              page.screenshot(path="01_home.png")
 
               print("Opening login modal...")
               page.evaluate("$('.modal-login').fadeIn()")
@@ -126,7 +141,6 @@ jobs:
               print("Filling credentials...")
               page.fill(".modal-login input[type='email'], .modal-login input[name='email'], .modal-login input[name='username'], .modal-login input[type='text']", username)
               page.fill(".modal-login input[type='password']", password)
-              page.screenshot(path="02_filled.png")
 
               try:
                   page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
@@ -137,31 +151,31 @@ jobs:
               print("Submitting login...")
               page.click(".modal-login .button-primary")
               time.sleep(4)
-              page.screenshot(path="03_after_login.png")
+              page.screenshot(path="after_login.png")
 
               if "My Account" in page.content():
                   print("✓ Login successful!")
               else:
                   print("✗ Login may have failed")
+                  sys.exit(1)
 
-              mlb_fresh  = scrape_schedule(page, "mlb",  "https://killersports.com/saved-trend-alerts?filter=MLB")
-              wnba_fresh = scrape_schedule(page, "wnba", "https://killersports.com/saved-trend-alerts?filter=WNBA")
+              fresh_data = {}
+              for key, url in SPORTS.items():
+                  fresh_data[key] = scrape_schedule(page, key, url)
+
               browser.close()
 
-          # Merge with history
-          mlb_merged  = merge(existing.get("mlb",  {"headers":[],"rows":[]}), mlb_fresh)
-          wnba_merged = merge(existing.get("wnba", {"headers":[],"rows":[]}), wnba_fresh)
-
-          out = {
-              "updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-              "mlb":  mlb_merged,
-              "wnba": wnba_merged
-          }
+          # Merge all sports with history
+          out = {"updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
+          for key in SPORTS:
+              old = existing.get(key, {"headers": [], "rows": []})
+              out[key] = merge(old, fresh_data.get(key))
+              print(f"{key}: {len(out[key]['rows'])} total rows")
 
           with open("data.json", "w") as f:
               json.dump(out, f, indent=2)
 
-          print(f"\nDone — MLB: {len(mlb_merged['rows'])} rows total, WNBA: {len(wnba_merged['rows'])} rows total")
+          print("\ndata.json written successfully")
           EOF
 
       - name: Commit and push data.json
