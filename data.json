@@ -1,1 +1,1128 @@
-
+{
+  "updated": "2026-06-27T03:46:37Z",
+  "saved": {
+    "mlb": {
+      "headers": [
+        "Date",
+        "Team",
+        "Starter",
+        "Current Moneyline",
+        "Current Total",
+        "RL",
+        "AVG Power",
+        "ML",
+        "AVG Power",
+        "OU",
+        "AVG Power"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Reds",
+          "Andrew Abbott - L",
+          "+152",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Pirates",
+          "Paul Skenes - R",
+          "-185",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Nationals",
+          "Andrew Alvarez - L",
+          "+115",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Orioles",
+          "Trevor Rogers - L",
+          "-140",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rangers",
+          "Nathan Eovaldi - R",
+          "-108",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Blue Jays",
+          "Patrick Corbin - L",
+          "-112",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Yankees",
+          "Will Warren - R",
+          "+100",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Red Sox",
+          "Payton Tolle - L",
+          "-120",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Mariners",
+          "Luis Castillo - R",
+          "-110",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Guardians",
+          "Joey Cantillo - L",
+          "-110",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Royals",
+          "Stephen Kolek - R",
+          "+110",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "White Sox",
+          "David Sandlin - R",
+          "-130",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Cubs",
+          "Colin Rea - R",
+          "+205",
+          "O7.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Brewers",
+          "Jacob Misiorowski - R",
+          "-250",
+          "O7.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rockies",
+          "Tomoyuki Sugano - R",
+          "+150",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Twins",
+          "Taj Bradley - R",
+          "-178",
+          "O9.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Marlins",
+          "Max Meyer - R",
+          "-110",
+          "O8.5",
+          "1",
+          "6.0",
+          "2",
+          "6.0",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Cardinals",
+          "Michael McGreevy - R",
+          "-110",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Athletics",
+          "JT Ginn - R",
+          "-115",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Angels",
+          "Walbert Urena - R",
+          "-105",
+          "O8.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dodgers",
+          "Roki Sasaki - R",
+          "-150",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Padres",
+          "Walker Buehler - R",
+          "+125",
+          "O7.5",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Braves",
+          "Reynaldo Lopez - R",
+          "-125",
+          "O8.5",
+          "1",
+          "6.0",
+          "3",
+          "6.0",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Giants",
+          "Trevor McDonald - R",
+          "+105",
+          "O8.5",
+          "-",
+          "-",
+          "1",
+          "6.0",
+          "-",
+          "-"
+        ]
+      ]
+    },
+    "wnba": {
+      "headers": [
+        "Date",
+        "Team",
+        "Current Spread",
+        "Current Total",
+        "ATS",
+        "AVG Power",
+        "SU",
+        "AVG Power",
+        "OU",
+        "AVG Power"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Mystics",
+          "-4.5",
+          "O164.5",
+          "1",
+          "6.0",
+          "-",
+          "-",
+          "4",
+          "6.5"
+        ],
+        [
+          "@",
+          "Sun",
+          "+4.5",
+          "O164.5",
+          "1",
+          "6.0",
+          "-",
+          "-",
+          "1",
+          "6.0"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Fire",
+          "+6.5",
+          "O174.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "4",
+          "6.5"
+        ],
+        [
+          "@",
+          "Sky",
+          "-6.5",
+          "O174.0",
+          "2",
+          "8.0",
+          "-",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dream",
+          "-2.5",
+          "O164.0",
+          "1",
+          "6.0",
+          "-",
+          "-",
+          "4",
+          "6.5"
+        ],
+        [
+          "@",
+          "Valkyries",
+          "+2.5",
+          "O164.0",
+          "-",
+          "-",
+          "-",
+          "-",
+          "2",
+          "6.0"
+        ]
+      ]
+    },
+    "nfl": {
+      "headers": [],
+      "rows": []
+    },
+    "nba": {
+      "headers": [],
+      "rows": []
+    },
+    "nhl": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaaf": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaab": {
+      "headers": [],
+      "rows": []
+    }
+  },
+  "ai": {
+    "mlb": {
+      "headers": [
+        "Date",
+        "Team",
+        "Starter",
+        "Current Moneyline",
+        "Current Total",
+        "ML",
+        "OU",
+        "RL"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Reds",
+          "Andrew Abbott - L",
+          "+152",
+          "O7.5",
+          "11",
+          "10",
+          "-"
+        ],
+        [
+          "@",
+          "Pirates",
+          "Paul Skenes - R",
+          "-185",
+          "O7.5",
+          "1",
+          "20",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Nationals",
+          "Andrew Alvarez - L",
+          "+115",
+          "O9.0",
+          "7",
+          "13",
+          "-"
+        ],
+        [
+          "@",
+          "Orioles",
+          "Trevor Rogers - L",
+          "-140",
+          "O9.0",
+          "-",
+          "4",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rangers",
+          "Nathan Eovaldi - R",
+          "-108",
+          "O8.5",
+          "2",
+          "12",
+          "-"
+        ],
+        [
+          "@",
+          "Blue Jays",
+          "Patrick Corbin - L",
+          "-112",
+          "O8.5",
+          "-",
+          "6",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Yankees",
+          "Will Warren - R",
+          "+100",
+          "O8.5",
+          "4",
+          "6",
+          "4"
+        ],
+        [
+          "@",
+          "Red Sox",
+          "Payton Tolle - L",
+          "-120",
+          "O8.5",
+          "-",
+          "8",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Mariners",
+          "Luis Castillo - R",
+          "-110",
+          "O7.5",
+          "2",
+          "12",
+          "1"
+        ],
+        [
+          "@",
+          "Guardians",
+          "Joey Cantillo - L",
+          "-110",
+          "O7.5",
+          "23",
+          "15",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Royals",
+          "Stephen Kolek - R",
+          "+110",
+          "O9.0",
+          "-",
+          "8",
+          "-"
+        ],
+        [
+          "@",
+          "White Sox",
+          "David Sandlin - R",
+          "-130",
+          "O9.0",
+          "2",
+          "22",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Cubs",
+          "Colin Rea - R",
+          "+205",
+          "O7.0",
+          "3",
+          "14",
+          "-"
+        ],
+        [
+          "@",
+          "Brewers",
+          "Jacob Misiorowski - R",
+          "-250",
+          "O7.0",
+          "1",
+          "8",
+          "1"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rockies",
+          "Tomoyuki Sugano - R",
+          "+150",
+          "O9.0",
+          "8",
+          "14",
+          "-"
+        ],
+        [
+          "@",
+          "Twins",
+          "Taj Bradley - R",
+          "-178",
+          "O9.0",
+          "6",
+          "19",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Marlins",
+          "Max Meyer - R",
+          "-110",
+          "O8.5",
+          "4",
+          "10",
+          "-"
+        ],
+        [
+          "@",
+          "Cardinals",
+          "Michael McGreevy - R",
+          "-110",
+          "O8.5",
+          "1",
+          "6",
+          "3"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Athletics",
+          "JT Ginn - R",
+          "-115",
+          "O8.5",
+          "1",
+          "11",
+          "-"
+        ],
+        [
+          "@",
+          "Angels",
+          "Walbert Urena - R",
+          "-105",
+          "O8.5",
+          "3",
+          "10",
+          "1"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dodgers",
+          "Roki Sasaki - R",
+          "-150",
+          "O7.5",
+          "-",
+          "19",
+          "-"
+        ],
+        [
+          "@",
+          "Padres",
+          "Walker Buehler - R",
+          "+125",
+          "O7.5",
+          "3",
+          "15",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Braves",
+          "Reynaldo Lopez - R",
+          "-125",
+          "O8.5",
+          "2",
+          "12",
+          "3"
+        ],
+        [
+          "@",
+          "Giants",
+          "Trevor McDonald - R",
+          "+105",
+          "O8.5",
+          "1",
+          "13",
+          "-"
+        ]
+      ]
+    },
+    "wnba": {
+      "headers": [
+        "Date",
+        "Team",
+        "Current Spread",
+        "Current Total",
+        "ATS",
+        "SU",
+        "OU"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Mystics",
+          "-4.5",
+          "O164.5",
+          "24",
+          "-",
+          "19"
+        ],
+        [
+          "@",
+          "Sun",
+          "+4.5",
+          "O164.5",
+          "21",
+          "-",
+          "8"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Fire",
+          "+6.5",
+          "O174.0",
+          "17",
+          "-",
+          "33"
+        ],
+        [
+          "@",
+          "Sky",
+          "-6.5",
+          "O174.0",
+          "7",
+          "-",
+          "5"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dream",
+          "-2.5",
+          "O164.0",
+          "10",
+          "-",
+          "9"
+        ],
+        [
+          "@",
+          "Valkyries",
+          "+2.5",
+          "O164.0",
+          "6",
+          "-",
+          "11"
+        ]
+      ]
+    },
+    "nfl": {
+      "headers": [],
+      "rows": []
+    },
+    "nba": {
+      "headers": [],
+      "rows": []
+    },
+    "nhl": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaaf": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaab": {
+      "headers": [],
+      "rows": []
+    }
+  },
+  "kspro": {
+    "mlb": {
+      "headers": [
+        "Date",
+        "Team",
+        "Starter",
+        "Current Moneyline",
+        "Current Total",
+        "RL",
+        "ML",
+        "OU"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Reds",
+          "Andrew Abbott - L",
+          "+152",
+          "O7.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Pirates",
+          "Paul Skenes - R",
+          "-185",
+          "O7.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Nationals",
+          "Andrew Alvarez - L",
+          "+115",
+          "O9.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Orioles",
+          "Trevor Rogers - L",
+          "-140",
+          "O9.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rangers",
+          "Nathan Eovaldi - R",
+          "-108",
+          "O8.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Blue Jays",
+          "Patrick Corbin - L",
+          "-112",
+          "O8.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Yankees",
+          "Will Warren - R",
+          "+100",
+          "O8.5",
+          "-",
+          "1",
+          "-"
+        ],
+        [
+          "@",
+          "Red Sox",
+          "Payton Tolle - L",
+          "-120",
+          "O8.5",
+          "-",
+          "2",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Mariners",
+          "Luis Castillo - R",
+          "-110",
+          "O7.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Guardians",
+          "Joey Cantillo - L",
+          "-110",
+          "O7.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Royals",
+          "Stephen Kolek - R",
+          "+110",
+          "O9.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "White Sox",
+          "David Sandlin - R",
+          "-130",
+          "O9.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Cubs",
+          "Colin Rea - R",
+          "+205",
+          "O7.0",
+          "-",
+          "1",
+          "-"
+        ],
+        [
+          "@",
+          "Brewers",
+          "Jacob Misiorowski - R",
+          "-250",
+          "O7.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Rockies",
+          "Tomoyuki Sugano - R",
+          "+150",
+          "O9.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Twins",
+          "Taj Bradley - R",
+          "-178",
+          "O9.0",
+          "-",
+          "1",
+          "1"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Marlins",
+          "Max Meyer - R",
+          "-110",
+          "O8.5",
+          "1",
+          "2",
+          "-"
+        ],
+        [
+          "@",
+          "Cardinals",
+          "Michael McGreevy - R",
+          "-110",
+          "O8.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Athletics",
+          "JT Ginn - R",
+          "-115",
+          "O8.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Angels",
+          "Walbert Urena - R",
+          "-105",
+          "O8.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dodgers",
+          "Roki Sasaki - R",
+          "-150",
+          "O7.5",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Padres",
+          "Walker Buehler - R",
+          "+125",
+          "O7.5",
+          "-",
+          "2",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Braves",
+          "Reynaldo Lopez - R",
+          "-125",
+          "O8.5",
+          "1",
+          "3",
+          "1"
+        ],
+        [
+          "@",
+          "Giants",
+          "Trevor McDonald - R",
+          "+105",
+          "O8.5",
+          "-",
+          "1",
+          "-"
+        ]
+      ]
+    },
+    "wnba": {
+      "headers": [
+        "Date",
+        "Team",
+        "Current Spread",
+        "Current Total",
+        "ATS",
+        "SU",
+        "OU"
+      ],
+      "rows": [
+        [
+          "Friday, Jun 26, 2026",
+          "Mystics",
+          "-4.5",
+          "O164.5",
+          "-",
+          "-",
+          "1"
+        ],
+        [
+          "@",
+          "Sun",
+          "+4.5",
+          "O164.5",
+          "1",
+          "-",
+          "-"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Fire",
+          "+6.5",
+          "O174.0",
+          "-",
+          "-",
+          "-"
+        ],
+        [
+          "@",
+          "Sky",
+          "-6.5",
+          "O174.0",
+          "2",
+          "-",
+          "2"
+        ],
+        [
+          "Friday, Jun 26, 2026",
+          "Dream",
+          "-2.5",
+          "O164.0",
+          "1",
+          "-",
+          "1"
+        ],
+        [
+          "@",
+          "Valkyries",
+          "+2.5",
+          "O164.0",
+          "-",
+          "-",
+          "-"
+        ]
+      ]
+    },
+    "nfl": {
+      "headers": [],
+      "rows": []
+    },
+    "nba": {
+      "headers": [],
+      "rows": []
+    },
+    "nhl": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaaf": {
+      "headers": [],
+      "rows": []
+    },
+    "ncaab": {
+      "headers": [],
+      "rows": []
+    }
+  }
+}
