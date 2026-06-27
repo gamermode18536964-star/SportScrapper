@@ -2,7 +2,7 @@ name: Fetch KillerSports Data
 
 on:
   schedule:
-    - cron: '0 15 * * *'   # 10 AM Eastern (UTC-5 standard / UTC-4 daylight)
+    - cron: '0 15 * * *'   # 10 AM Eastern
   workflow_dispatch:
 
 jobs:
@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout repo
@@ -20,7 +22,7 @@ jobs:
           pip install playwright beautifulsoup4 --break-system-packages
           playwright install chromium --with-deps
 
-      - name: Scrape KillerSports Active Schedule
+      - name: Scrape KillerSports & merge history
         env:
           KS_USERNAME: ${{ secrets.KS_USERNAME }}
           KS_PASSWORD: ${{ secrets.KS_PASSWORD }}
@@ -34,31 +36,21 @@ jobs:
           password = os.environ["KS_PASSWORD"]
 
           def scrape_schedule(page, sport, url):
-              print(f"\nFetching {sport} schedule: {url}")
+              print(f"\nFetching {sport}: {url}")
               page.goto(url, wait_until="networkidle", timeout=60000)
               time.sleep(4)
               page.screenshot(path=f"{sport}_schedule.png")
 
               html = page.content()
               soup = BeautifulSoup(html, "html.parser")
-
-              # Print all tables found for debugging
               tables = soup.find_all("table")
-              print(f"  Found {len(tables)} table(s) on page")
-              for i, t in enumerate(tables):
-                  rows = t.find_all("tr")
-                  cls = t.get("class", "")
-                  tid = t.get("id", "")
-                  print(f"  Table {i}: id='{tid}' class='{cls}' rows={len(rows)}")
+              print(f"  Found {len(tables)} table(s)")
 
               if not tables:
-                  print(f"  WARNING: No tables found", file=sys.stderr)
-                  # Print page title so we know what page we're on
                   title = soup.find("title")
                   print(f"  Page title: {title.text if title else 'unknown'}")
                   return {"headers": [], "rows": []}
 
-              # Use the largest table (most rows) as it's likely the schedule
               table = max(tables, key=lambda t: len(t.find_all("tr")))
 
               headers = []
@@ -78,9 +70,42 @@ jobs:
                       rows.append(cells)
 
               print(f"  Parsed: {len(headers)} headers, {len(rows)} rows")
-              if headers:
-                  print(f"  Headers: {headers[:8]}")
               return {"headers": headers, "rows": rows}
+
+          def merge(existing, fresh):
+              """Merge fresh data into existing, avoiding duplicate dates."""
+              if not fresh["rows"]:
+                  return existing
+              if not existing["rows"]:
+                  return fresh
+
+              # Determine today's date label from fresh data
+              today_labels = set()
+              for row in fresh["rows"]:
+                  if row[0] and row[0] != "@":
+                      today_labels.add(row[0])
+
+              # Remove today's rows from existing (will be replaced by fresh)
+              kept = []
+              skip = False
+              for row in existing["rows"]:
+                  if row[0] and row[0] != "@":
+                      skip = row[0] in today_labels
+                  if not skip:
+                      kept.append(row)
+
+              return {
+                  "headers": fresh["headers"],
+                  "rows": kept + fresh["rows"]
+              }
+
+          # Load existing data.json
+          existing = {"mlb": {"headers": [], "rows": []}, "wnba": {"headers": [], "rows": []}}
+          try:
+              with open("data.json") as f:
+                  existing = json.load(f)
+          except:
+              pass
 
           with sync_playwright() as pw:
               browser = pw.chromium.launch(headless=True)
@@ -89,63 +114,54 @@ jobs:
               )
               page = context.new_page()
 
-              # ── Step 1: Load the home page ──────────────────
               print("Loading KillerSports...")
               page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
               time.sleep(2)
               page.screenshot(path="01_home.png")
 
-              # ── Step 2: Click Login button to open modal ────
               print("Opening login modal...")
               page.evaluate("$('.modal-login').fadeIn()")
               time.sleep(1)
-              page.screenshot(path="02_modal.png")
 
-              # ── Step 3: Fill credentials ────────────────────
               print("Filling credentials...")
-              # Find email/username field inside the modal
               page.fill(".modal-login input[type='email'], .modal-login input[name='email'], .modal-login input[name='username'], .modal-login input[type='text']", username)
               page.fill(".modal-login input[type='password']", password)
-              page.screenshot(path="03_filled.png")
+              page.screenshot(path="02_filled.png")
 
-              # ── Step 4: Dismiss cookie consent banner ───────
               try:
                   page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
-                  print("Cookie consent dismissed")
               except:
                   pass
               time.sleep(0.5)
 
-              # ── Step 5: Submit ──────────────────────────────
               print("Submitting login...")
               page.click(".modal-login .button-primary")
               time.sleep(4)
-              page.screenshot(path="04_after_login.png")
+              page.screenshot(path="03_after_login.png")
 
-              # Check if logged in by looking for "My Account" in nav
-              content = page.content()
-              if "My Account" in content:
+              if "My Account" in page.content():
                   print("✓ Login successful!")
               else:
-                  print("✗ Login may have failed — 'My Account' not found in page")
+                  print("✗ Login may have failed")
 
-              # ── Step 5: Scrape active schedule pages ────────
-              mlb_data  = scrape_schedule(page, "mlb",  "https://killersports.com/saved-trend-alerts?filter=MLB")
-              wnba_data = scrape_schedule(page, "wnba", "https://killersports.com/saved-trend-alerts?filter=WNBA")
-
+              mlb_fresh  = scrape_schedule(page, "mlb",  "https://killersports.com/saved-trend-alerts?filter=MLB")
+              wnba_fresh = scrape_schedule(page, "wnba", "https://killersports.com/saved-trend-alerts?filter=WNBA")
               browser.close()
 
-          # ── Write data.json ──────────────────────────────────
+          # Merge with history
+          mlb_merged  = merge(existing.get("mlb",  {"headers":[],"rows":[]}), mlb_fresh)
+          wnba_merged = merge(existing.get("wnba", {"headers":[],"rows":[]}), wnba_fresh)
+
           out = {
               "updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-              "mlb":  mlb_data,
-              "wnba": wnba_data
+              "mlb":  mlb_merged,
+              "wnba": wnba_merged
           }
 
           with open("data.json", "w") as f:
               json.dump(out, f, indent=2)
 
-          print(f"\nDone — MLB: {len(mlb_data['rows'])} rows, WNBA: {len(wnba_data['rows'])} rows")
+          print(f"\nDone — MLB: {len(mlb_merged['rows'])} rows total, WNBA: {len(wnba_merged['rows'])} rows total")
           EOF
 
       - name: Commit and push data.json
@@ -163,3 +179,11 @@ jobs:
           name: debug-screenshots
           path: "*.png"
           retention-days: 3
+
+      - name: Trigger GitHub Pages deployment
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages/builds"
+          echo "Pages build triggered"
