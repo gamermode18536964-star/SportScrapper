@@ -721,7 +721,7 @@ function applyBuilder() {
     var data=allData[src]&&allData[src][builderSport];
     if (!data) return;
     var h=(data.headers[ci]||'').trim();
-    if (/^(team|date|@)$/i.test(h)) return;
+    if (/^(team|@)$/i.test(h)) return;
     colDefs.push({src:src,colIdx:ci,label:h+' ('+SOURCE_LABELS[src]+')'});
   });
   var teams=Object.keys(teamMap).sort();
