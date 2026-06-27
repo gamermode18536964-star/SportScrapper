@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KillerSports Daily Picks</title>
+  <title>SportScraper</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono&display=swap" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
@@ -114,8 +114,8 @@
   <div class="topbar">
     <div class="logo">S</div>
     <div>
-      <div class="topbar-title">KillerSports Daily Picks</div>
-      <div class="topbar-sub">MLB &amp; WNBA system alerts</div>
+      <div class="topbar-title">SportScraper</div>
+      <div class="topbar-sub">MLB · WNBA · NFL · NBA · NHL · NCAAF · NCAAB</div>
     </div>
     <div class="topbar-right">
       <span class="update-badge" id="updateBadge">Loading…</span>
@@ -131,8 +131,13 @@
   <!-- Controls -->
   <div class="card">
     <div class="sport-row">
-      <button class="sport-btn active" id="btn-mlb"  onclick="setSport('mlb')">MLB</button>
-      <button class="sport-btn"        id="btn-wnba" onclick="setSport('wnba')">WNBA</button>
+      <button class="sport-btn active" id="btn-mlb"   onclick="setSport('mlb')">MLB</button>
+      <button class="sport-btn"        id="btn-wnba"  onclick="setSport('wnba')">WNBA</button>
+      <button class="sport-btn"        id="btn-nfl"   onclick="setSport('nfl')">NFL</button>
+      <button class="sport-btn"        id="btn-nba"   onclick="setSport('nba')">NBA</button>
+      <button class="sport-btn"        id="btn-nhl"   onclick="setSport('nhl')">NHL</button>
+      <button class="sport-btn"        id="btn-ncaaf" onclick="setSport('ncaaf')">NCAAF</button>
+      <button class="sport-btn"        id="btn-ncaab" onclick="setSport('ncaab')">NCAAB</button>
     </div>
 
     <div class="filter-grid">
@@ -202,7 +207,7 @@
 </div>
 
 <script>
-var allData   = { mlb: null, wnba: null };
+var allData   = { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null };
 var sport     = 'mlb';
 var sortCol   = -1;
 var sortDir   = 'asc';
@@ -228,7 +233,53 @@ var CHIPS = {
     { label:'Any pick',     pick:'any', line:'' },
     { label:'Favorites',    pick:'',    line:'fav' },
     { label:'Underdogs',    pick:'',    line:'dog' },
-  ]
+  ],
+  nfl: [
+    { label:'All',          pick:'',    line:'' },
+    { label:'ATS picks',    pick:'ats', line:'' },
+    { label:'OU picks',     pick:'ou',  line:'' },
+    { label:'ML picks',     pick:'ml',  line:'' },
+    { label:'Any pick',     pick:'any', line:'' },
+    { label:'Favorites',    pick:'',    line:'fav' },
+    { label:'Underdogs',    pick:'',    line:'dog' },
+    { label:'Fav + pick',   pick:'any', line:'fav' },
+    { label:'Dog + pick',   pick:'any', line:'dog' },
+  ],
+  nba: [
+    { label:'All',          pick:'',    line:'' },
+    { label:'ATS picks',    pick:'ats', line:'' },
+    { label:'OU picks',     pick:'ou',  line:'' },
+    { label:'ML picks',     pick:'ml',  line:'' },
+    { label:'Any pick',     pick:'any', line:'' },
+    { label:'Favorites',    pick:'',    line:'fav' },
+    { label:'Underdogs',    pick:'',    line:'dog' },
+  ],
+  nhl: [
+    { label:'All',          pick:'',    line:'' },
+    { label:'ML picks',     pick:'ml',  line:'' },
+    { label:'OU picks',     pick:'ou',  line:'' },
+    { label:'Any pick',     pick:'any', line:'' },
+    { label:'Favorites',    pick:'',    line:'fav' },
+    { label:'Underdogs',    pick:'',    line:'dog' },
+  ],
+  ncaaf: [
+    { label:'All',          pick:'',    line:'' },
+    { label:'ATS picks',    pick:'ats', line:'' },
+    { label:'OU picks',     pick:'ou',  line:'' },
+    { label:'ML picks',     pick:'ml',  line:'' },
+    { label:'Any pick',     pick:'any', line:'' },
+    { label:'Favorites',    pick:'',    line:'fav' },
+    { label:'Underdogs',    pick:'',    line:'dog' },
+  ],
+  ncaab: [
+    { label:'All',          pick:'',    line:'' },
+    { label:'ATS picks',    pick:'ats', line:'' },
+    { label:'OU picks',     pick:'ou',  line:'' },
+    { label:'ML picks',     pick:'ml',  line:'' },
+    { label:'Any pick',     pick:'any', line:'' },
+    { label:'Favorites',    pick:'',    line:'fav' },
+    { label:'Underdogs',    pick:'',    line:'dog' },
+  ],
 };
 
 // ── Boot ──────────────────────────────────────────
@@ -237,8 +288,9 @@ var CHIPS = {
     var r = await fetch('data.json?_=' + Date.now());
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
-    allData.mlb  = d.mlb  || { headers:[], rows:[] };
-    allData.wnba = d.wnba || { headers:[], rows:[] };
+    ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
+      allData[s] = d[s] || { headers:[], rows:[] };
+    });
     var ts = d.updated
       ? 'Updated ' + new Date(d.updated).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
       : 'Data loaded';
@@ -256,7 +308,7 @@ var CHIPS = {
 
 // ── Hidden cols init ──────────────────────────────
 function initHiddenCols() {
-  ['mlb','wnba'].forEach(function(s) {
+  ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
     hiddenCols[s] = new Set();
   });
 }
@@ -265,7 +317,7 @@ function initHiddenCols() {
 function setSport(s) {
   sport = s; sortCol = -1; sortDir = 'asc';
   document.querySelectorAll('.sport-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('btn-' + s).classList.add('active');
+  var btnEl = document.getElementById('btn-' + s); if(btnEl) btnEl.classList.add('active');
   clearFilters(true);
   renderChips();
   renderColToggles();
