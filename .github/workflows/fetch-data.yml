@@ -1,33 +1,220 @@
-name: Deploy to GitHub Pages
+name: Fetch KillerSports Data
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '0 15 * * *'   # 10 AM Eastern
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  fetch:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: |
+          pip install playwright beautifulsoup4 --break-system-packages
+          playwright install chromium --with-deps
+
+      - name: Scrape KillerSports & merge history
+        env:
+          KS_USERNAME: ${{ secrets.KS_USERNAME }}
+          KS_PASSWORD: ${{ secrets.KS_PASSWORD }}
+        run: |
+          python3 - <<'EOF'
+          import json, datetime, os, sys, time
+          from playwright.sync_api import sync_playwright
+          from bs4 import BeautifulSoup
+
+          username = os.environ["KS_USERNAME"]
+          password = os.environ["KS_PASSWORD"]
+
+          SPORTS = ["mlb", "wnba", "nfl", "nba", "nhl", "ncaaf", "ncaab"]
+
+          SOURCES = {
+              "saved": {
+                  "url":  "https://killersports.com/saved-trend-alerts?filter={sport}",
+                  "skip": ["No Trends to Show"],
+                  "filters": {
+                      "mlb": "MLB", "wnba": "WNBA", "nfl": "NFL",
+                      "nba": "NBA", "nhl": "NHL", "ncaaf": "NCAAFB", "ncaab": "NCAABB"
+                  }
+              },
+              "ai": {
+                  "url":  "https://killersports.com/trend-ware-matchup2?filter={sport}",
+                  "skip": ["Vault Empty"],
+                  "filters": {
+                      "mlb": "MLB", "wnba": "WNBA", "nfl": "NFL",
+                      "nba": "NBA", "nhl": "NHL", "ncaaf": "NCAAFB", "ncaab": "NCAABB"
+                  }
+              },
+              "kspro": {
+                  "url":  "https://killersports.com/ks-pro-alerts?filter={sport}",
+                  "skip": ["No Indicators to Show"],
+                  "filters": {
+                      "mlb": "MLB", "wnba": "WNBA", "nfl": "NFL",
+                      "nba": "NBA", "nhl": "NHL", "ncaaf": "NCAAFB", "ncaab": "NCAABB"
+                  }
+              }
+          }
+
+          def scrape(page, source_key, sport_key, cfg):
+              filter_val = cfg["filters"][sport_key]
+              url = cfg["url"].replace("{sport}", filter_val)
+              print(f"\n  [{source_key}] {sport_key}: {url}")
+
+              page.goto(url, wait_until="networkidle", timeout=60000)
+              time.sleep(3)
+              page.screenshot(path=f"{source_key}_{sport_key}.png")
+
+              html = page.content()
+
+              # Check skip phrases
+              for phrase in cfg["skip"]:
+                  if phrase in html:
+                      print(f"  Skipping: '{phrase}' found")
+                      return None
+
+              soup = BeautifulSoup(html, "html.parser")
+              tables = soup.find_all("table")
+              print(f"  Found {len(tables)} table(s)")
+
+              if not tables:
+                  title = soup.find("title")
+                  print(f"  No tables — page title: {title.text if title else 'unknown'}")
+                  return None
+
+              table = max(tables, key=lambda t: len(t.find_all("tr")))
+
+              headers = []
+              thead = table.find("thead")
+              if thead:
+                  headers = [th.get_text(strip=True) for th in thead.find_all(["th","td"])]
+              if not headers:
+                  first_row = table.find("tr")
+                  if first_row:
+                      headers = [td.get_text(strip=True) for td in first_row.find_all(["th","td"])]
+
+              rows = []
+              tbody = table.find("tbody") or table
+              for tr in tbody.find_all("tr"):
+                  cells = [td.get_text(strip=True) for td in tr.find_all(["td","th"])]
+                  if cells and any(c.strip() for c in cells):
+                      rows.append(cells)
+
+              print(f"  → {len(rows)} rows, {len(headers)} headers")
+              return {"headers": headers, "rows": rows}
+
+          def merge(existing, fresh):
+              if fresh is None:
+                  return existing
+              if not fresh["rows"]:
+                  return existing
+              if not existing or not existing.get("rows"):
+                  return fresh
+
+              today_labels = set(r[0] for r in fresh["rows"] if r[0] and r[0] != "@")
+
+              kept, skip = [], False
+              for row in existing["rows"]:
+                  if row[0] and row[0] != "@":
+                      skip = row[0] in today_labels
+                  if not skip:
+                      kept.append(row)
+
+              return {"headers": fresh["headers"], "rows": kept + fresh["rows"]}
+
+          # Load existing data.json
+          existing = {}
+          try:
+              with open("data.json") as f:
+                  existing = json.load(f)
+          except:
+              pass
+
+          with sync_playwright() as pw:
+              browser = pw.chromium.launch(headless=True)
+              context = browser.new_context(
+                  user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"
+              )
+              page = context.new_page()
+
+              # Login once
+              print("Logging in...")
+              page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
+              time.sleep(2)
+              page.evaluate("$('.modal-login').fadeIn()")
+              time.sleep(1)
+              page.fill(".modal-login input[type='email'], .modal-login input[name='email'], .modal-login input[name='username'], .modal-login input[type='text']", username)
+              page.fill(".modal-login input[type='password']", password)
+              try:
+                  page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
+              except:
+                  pass
+              time.sleep(0.5)
+              page.click(".modal-login .button-primary")
+              time.sleep(4)
+
+              if "My Account" not in page.content():
+                  print("✗ Login failed — aborting")
+                  sys.exit(1)
+              print("✓ Login successful!")
+
+              # Scrape all sources × all sports
+              fresh = {}
+              for src_key, cfg in SOURCES.items():
+                  fresh[src_key] = {}
+                  print(f"\n=== Scraping source: {src_key} ===")
+                  for sport_key in SPORTS:
+                      fresh[src_key][sport_key] = scrape(page, src_key, sport_key, cfg)
+
+              browser.close()
+
+          # Build output — merge each source × sport
+          out = {"updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
+          for src_key in SOURCES:
+              out[src_key] = {}
+              for sport_key in SPORTS:
+                  old = existing.get(src_key, {}).get(sport_key, {"headers":[], "rows":[]})
+                  merged = merge(old, fresh[src_key][sport_key])
+                  out[src_key][sport_key] = merged
+                  print(f"{src_key}/{sport_key}: {len(merged.get('rows', []))} rows")
+
+          with open("data.json", "w") as f:
+              json.dump(out, f, indent=2)
+
+          print("\n✓ data.json written")
+          EOF
+
+      - name: Commit and push data.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --cached --quiet || git commit -m "data: KillerSports refresh $(date -u +%Y-%m-%d)"
+          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+
+      - name: Upload debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshots
+          path: "*.png"
+          retention-days: 3
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
