@@ -275,70 +275,76 @@ var hiddenCols = {};   // { mlb: Set, wnba: Set }
 
 var CHIPS = {
   mlb: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'RL picks',     pick:'rl',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
-    { label:'Fav + pick',   pick:'any', line:'fav' },
-    { label:'Dog + pick',   pick:'any', line:'dog' },
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'ML picks',      pick:'ml',  line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'RL picks',      pick:'rl',  line:'',   today:false },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
   wnba: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ATS picks',    pick:'ats', line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'SU picks',     pick:'su',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'ATS picks',     pick:'ats', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'SU picks',      pick:'su',  line:'',   today:false },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
   ],
-  nfl: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ATS picks',    pick:'ats', line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
-    { label:'Fav + pick',   pick:'any', line:'fav' },
-    { label:'Dog + pick',   pick:'any', line:'dog' },
+  nfl:   [
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
-  nba: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ATS picks',    pick:'ats', line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
+  nba:   [
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
-  nhl: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
+  nhl:   [
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
   ncaaf: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ATS picks',    pick:'ats', line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
   ncaab: [
-    { label:'All',          pick:'',    line:'' },
-    { label:'ATS picks',    pick:'ats', line:'' },
-    { label:'OU picks',     pick:'ou',  line:'' },
-    { label:'ML picks',     pick:'ml',  line:'' },
-    { label:'Any pick',     pick:'any', line:'' },
-    { label:'Favorites',    pick:'',    line:'fav' },
-    { label:'Underdogs',    pick:'',    line:'dog' },
+    { label:'All',           pick:'',    line:'',   today:false },
+    { label:"Today's games", pick:'',    line:'',   today:true  },
+    { label:'Any pick',      pick:'any', line:'',   today:false },
+    { label:'OU picks',      pick:'ou',  line:'',   today:false },
+    { label:'Favorites',     pick:'',    line:'fav',today:false },
+    { label:'Underdogs',     pick:'',    line:'dog',today:false },
+    { label:'Fav + pick',    pick:'any', line:'fav',today:false },
+    { label:'Dog + pick',    pick:'any', line:'dog',today:false },
   ],
 };
 
@@ -417,6 +423,27 @@ function applyChip(i) {
   document.getElementById('pickFilter').value = chip.pick;
   document.getElementById('lineFilter').value = chip.line;
   document.getElementById('searchInput').value = '';
+  // Handle today's games chip
+  if (chip.today) {
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth()+1).padStart(2,'0');
+    var dd = String(today.getDate()).padStart(2,'0');
+    var todayStr = yyyy+'-'+mm+'-'+dd;
+    document.getElementById('dateFrom').value = todayStr;
+    document.getElementById('dateTo').value   = todayStr;
+    // Open date panel to show it's active
+    var panel = document.getElementById('datePanel');
+    var btn   = document.getElementById('dateToggleBtn');
+    if (!panel.classList.contains('open')) {
+      panel.classList.add('open');
+      btn.classList.add('active');
+    }
+  } else if (chip.label === 'All') {
+    // Clear dates when going back to All
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value   = '';
+  }
   document.querySelectorAll('.chip').forEach(function(c, j){ c.classList.toggle('active', j === i); });
   applyFilters();
 }
@@ -736,8 +763,11 @@ function applyBuilder() {
     colDefs.push({ src: src, colIdx: ci, label: h + ' (' + SOURCE_LABELS[src] + ')' });
   });
 
+  // Read date filters from the main UI
+  var dateFrom = document.getElementById('dateFrom').value ? new Date(document.getElementById('dateFrom').value) : null;
+  var dateTo   = document.getElementById('dateTo').value   ? new Date(document.getElementById('dateTo').value + 'T23:59:59') : null;
+
   // Build game-pair rows — find matchups from the primary source
-  // Use first available source as row structure driver
   var primarySrc = null;
   ['saved','ai','kspro'].forEach(function(src) {
     if (!primarySrc && allData[src] && allData[src][builderSport] && allData[src][builderSport].rows.length) {
@@ -779,23 +809,45 @@ function applyBuilder() {
   var headers = ['Date', 'Team'].concat(colDefs.map(function(d){ return d.label; }));
   var lastDate = '';
 
+  var currentGameDate = null;
+  var currentGameRows = [];  // buffer home+away pair
+
+  function flushGame() {
+    if (!currentGameRows.length) return;
+    // Check date filter
+    if (dateFrom || dateTo) {
+      if (currentGameDate) {
+        if (dateFrom && currentGameDate < dateFrom) { currentGameRows = []; return; }
+        if (dateTo   && currentGameDate > dateTo)   { currentGameRows = []; return; }
+      }
+    }
+    currentGameRows.forEach(function(r){ rows.push(r); });
+    currentGameRows = [];
+  }
+
   primaryData.rows.forEach(function(row) {
     var isAt = row[0] === '@';
-    if (!isAt && row[0]) lastDate = row[0];
+    if (!isAt) {
+      // New game — flush previous
+      flushGame();
+      if (row[0]) {
+        lastDate = row[0];
+        try { currentGameDate = new Date(row[0]); } catch(e){ currentGameDate = null; }
+      }
+    }
     var team = (row[pTeamIdx] || '').trim();
     if (!team) return;
 
     var outRow = [isAt ? '@' : lastDate, team];
-
     colDefs.forEach(function(def) {
       var sd = teamLookup[team] && teamLookup[team][def.src];
       if (!sd) { outRow.push('-'); return; }
       var v = sd.row[def.colIdx];
       outRow.push((v != null && v !== '') ? v : '-');
     });
-
-    rows.push(outRow);
+    currentGameRows.push(outRow);
   });
+  flushGame(); // flush last game
 
   customTableData = { headers: headers, rows: rows, sport: builderSport };
   closeBuilder();
