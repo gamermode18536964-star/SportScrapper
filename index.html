@@ -783,7 +783,8 @@ function applyBuilder() {
   var pTeamIdx = primaryData.headers.findIndex(function(h){ return /^team$/i.test(h.trim()); });
   if (pTeamIdx < 0) pTeamIdx = 1;
 
-  // Build lookup: team -> { src -> row } for each source
+  // Build lookup: "team||date" -> { src -> row } keyed by both team AND date
+  // This prevents a team appearing on multiple days from overwriting itself
   var teamLookup = {};
   ['saved','ai','kspro'].forEach(function(src) {
     var data = allData[src] && allData[src][builderSport];
@@ -796,11 +797,11 @@ function applyBuilder() {
       if (!isAt && row[0]) lastDate = row[0];
       var team = (row[ti] || '').trim();
       if (!team) return;
-      if (!teamLookup[team]) teamLookup[team] = {};
-      // Store row with date resolved
       var r = row.slice();
       if (isAt) r[0] = lastDate;
-      teamLookup[team][src] = { row: r, headers: data.headers };
+      var key = team + '||' + lastDate;  // unique per team+date
+      if (!teamLookup[key]) teamLookup[key] = {};
+      teamLookup[key][src] = { row: r, headers: data.headers };
     });
   });
 
@@ -838,9 +839,10 @@ function applyBuilder() {
     var team = (row[pTeamIdx] || '').trim();
     if (!team) return;
 
+    var lookupKey = team + '||' + lastDate;
     var outRow = [isAt ? '@' : lastDate, team];
     colDefs.forEach(function(def) {
-      var sd = teamLookup[team] && teamLookup[team][def.src];
+      var sd = teamLookup[lookupKey] && teamLookup[lookupKey][def.src];
       if (!sd) { outRow.push('-'); return; }
       var v = sd.row[def.colIdx];
       outRow.push((v != null && v !== '') ? v : '-');
