@@ -3,39 +3,43 @@ from datetime import datetime, timezone
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 
+# All sources navigate to a single URL and use client-side tabs to switch sport
 SOURCES = {
     "saved": {
-        "url": "https://killersports.com/saved-trend-alerts?filter={sport}",
+        "url": "https://killersports.com/saved-trend-alerts",
         "skip": ["No Trends to Show"],
-        "filters": {
-            "mlb":"MLB","wnba":"WNBA","nfl":"NFL",
-            "nba":"NBA","nhl":"NHL","ncaaf":"NCAAFB","ncaab":"NCAABB"
+        "sports": ["NFL", "NBA", "MLB", "NHL", "NCAAF", "NCAAB", "WNBA"],
+        "sport_keys": {
+            "NFL":"nfl","NBA":"nba","MLB":"mlb","NHL":"nhl",
+            "NCAAF":"ncaaf","NCAAB":"ncaab","WNBA":"wnba"
         }
     },
     "ai": {
-        "url": "https://killersports.com/trend-ware-matchup2?filter={sport}",
+        "url": "https://killersports.com/trend-ware-matchup2",
         "skip": ["Vault Empty"],
-        "filters": {
-            "mlb":"MLB","wnba":"WNBA","nfl":"NFL",
-            "nba":"NBA","nhl":"NHL","ncaaf":"NCAAFB","ncaab":"NCAABB"
+        "sports": ["NFL", "NBA", "MLB", "NHL", "NCAAF", "NCAAB", "WNBA"],
+        "sport_keys": {
+            "NFL":"nfl","NBA":"nba","MLB":"mlb","NHL":"nhl",
+            "NCAAF":"ncaaf","NCAAB":"ncaab","WNBA":"wnba"
         }
     },
     "kspro": {
-        "url": "https://killersports.com/ks-pro-alerts?filter={sport}",
+        "url": "https://killersports.com/ks-pro-alerts",
         "skip": ["No Indicators to Show"],
-        "filters": {
-            "mlb":"MLB","wnba":"WNBA","nfl":"NFL",
-            "nba":"NBA","nhl":"NHL","ncaaf":"NCAAFB","ncaab":"NCAABB"
+        "sports": ["NFL", "NBA", "MLB", "NHL", "NCAAF", "NCAAB", "WNBA"],
+        "sport_keys": {
+            "NFL":"nfl","NBA":"nba","MLB":"mlb","NHL":"nhl",
+            "NCAAF":"ncaaf","NCAAB":"ncaab","WNBA":"wnba"
         }
     },
     "gameday": {
         "url": "https://killersports.com/gameday-trends",
         "skip": ["No Trends to Show", "No Games", "No Data"],
-        "filters": {
-            "mlb":"MLB","wnba":"WNBA","nfl":"NFL",
-            "nba":"NBA","nhl":"NHL","ncaaf":"NCAAF","ncaab":"NCAAB"
-        },
-        "tab_based": True
+        "sports": ["NFL", "NBA", "MLB", "NHL", "NCAAF", "NCAAB", "WNBA"],
+        "sport_keys": {
+            "NFL":"nfl","NBA":"nba","MLB":"mlb","NHL":"nhl",
+            "NCAAF":"ncaaf","NCAAB":"ncaab","WNBA":"wnba"
+        }
     }
 }
 
@@ -108,106 +112,99 @@ def extract_rows(table, headers):
         print(f"  [DEBUG] First row sample: {rows[0]}")
     return rows
 
-async def scrape_tab(page, url, sport_label, skip_phrases, label):
-    """Scrape a page where sports are selected via client-side tabs (URL doesn't change)."""
-    print(f"\n--- Scraping tab {label}: {url} (tab: {sport_label}) ---")
-    try:
-        # Only navigate if we're not already on this page
-        current = page.url
-        if not current.startswith(url.split("?")[0]):
-            await page.goto(url, wait_until="networkidle", timeout=60000)
-            await asyncio.sleep(3)
-
-        # Find and click the tab for this sport
-        clicked = await page.evaluate(f"""() => {{
-            const label = {json.dumps(sport_label)};
-            // Try various tab/filter link patterns
-            const candidates = Array.from(document.querySelectorAll(
-                'a, button, li, [role=tab], .tab, .filter-btn, .sport-tab, .nav-link'
-            ));
-            for (const el of candidates) {{
-                const t = el.textContent.trim();
-                if (t === label || t.toUpperCase() === label.toUpperCase()) {{
+async def click_sport_tab(page, sport_label):
+    """Click the tab for the given sport label. Returns what was clicked or 'not found'."""
+    result = await page.evaluate(f"""() => {{
+        const target = {json.dumps(sport_label)}.toUpperCase();
+        // Try tab/filter elements
+        const selectors = [
+            'a', 'button', 'li', '[role=tab]',
+            '.tab', '.filter-btn', '.sport-tab', '.nav-link',
+            '.nav-item', '.pill', '.chip', 'span'
+        ];
+        for (const sel of selectors) {{
+            for (const el of document.querySelectorAll(sel)) {{
+                if (el.textContent.trim().toUpperCase() === target && el.offsetParent !== null) {{
                     el.click();
-                    return 'clicked: ' + el.tagName + ' "' + t + '"';
+                    return 'clicked:' + sel + ':' + el.textContent.trim();
                 }}
             }}
-            return 'not found';
-        }}""")
-        print(f"  [DEBUG] Tab click result: {clicked}")
+        }}
+        return 'not found';
+    }}""")
+    return result
 
-        if clicked == 'not found':
-            # Log available tabs for debugging
-            tabs = await page.evaluate("""() => {
-                return Array.from(document.querySelectorAll(
-                    'a, button, li, [role=tab], .tab, .filter-btn, .nav-link'
-                )).filter(el => el.offsetParent !== null && el.textContent.trim().length < 20)
-                 .map(el => el.textContent.trim())
-                 .filter((v, i, a) => v && a.indexOf(v) === i)
-                 .slice(0, 30);
-            }""")
-            print(f"  [DEBUG] Available tabs: {tabs}")
+async def scrape_source(page, src_key, src_cfg, existing):
+    """Navigate to source URL once, then click each sport tab and scrape."""
+    print(f"\n====== Source: {src_key} ({src_cfg['url']}) ======")
+    results = {}
 
-        await asyncio.sleep(2)  # Wait for table to update after tab click
+    await page.goto(src_cfg["url"], wait_until="networkidle", timeout=60000)
+    await asyncio.sleep(3)
+
+    # Debug: show what tabs are available
+    tabs = await page.evaluate("""() => {
+        return Array.from(document.querySelectorAll(
+            'a, button, li, [role=tab], .tab, .filter-btn, .nav-link, .nav-item, .pill, .chip'
+        ))
+        .filter(el => el.offsetParent !== null && el.textContent.trim().length < 20)
+        .map(el => el.textContent.trim())
+        .filter((v, i, a) => v && a.indexOf(v) === i)
+        .slice(0, 40);
+    }""")
+    print(f"  [DEBUG] Available tabs on page: {tabs}")
+
+    for sport_label in src_cfg["sports"]:
+        sport_key = src_cfg["sport_keys"][sport_label]
+        label = f"{src_key}/{sport_key}"
+        print(f"\n--- Tab: {label} (clicking '{sport_label}') ---")
+
+        click_result = await click_sport_tab(page, sport_label)
+        print(f"  [DEBUG] Tab click: {click_result}")
+
+        if click_result == 'not found':
+            print(f"  [WARN] Could not find tab for {sport_label}")
+            results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+            continue
+
+        # Wait for table to update after tab click
+        await asyncio.sleep(2)
 
         html = await page.content()
         soup = BeautifulSoup(html, "html.parser")
         page_text = soup.get_text()
-        for phrase in skip_phrases:
-            if phrase.lower() in page_text.lower():
-                print(f"  [INFO] Skip phrase found: '{phrase}' - returning empty")
-                return None
-        table = best_table(soup, skip_phrases)
-        if table is None:
-            print(f"  [WARN] No suitable table found for {label}")
-            print(f"  [DEBUG] Page text snippet: {page_text[:500]}")
-            return None
-        headers = extract_headers(table)
-        if not headers:
-            print(f"  [WARN] Could not extract headers for {label}")
-            return None
-        rows = extract_rows(table, headers)
-        if not rows:
-            print(f"  [INFO] Table found but no data rows for {label}")
-            return None
-        print(f"  [OK] {label}: {len(headers)} cols, {len(rows)} rows")
-        return {"headers": headers, "rows": rows}
-    except Exception as e:
-        print(f"  [ERROR] {label}: {e}")
-        return None
 
-async def scrape(page, url, skip_phrases, label):
-    print(f"\n--- Scraping {label}: {url} ---")
-    try:
-        await page.goto(url, wait_until="networkidle", timeout=60000)
-        await asyncio.sleep(3)
-        html = await page.content()
-        soup = BeautifulSoup(html, "html.parser")
-        page_text = soup.get_text()
-        for phrase in skip_phrases:
+        skip_hit = False
+        for phrase in src_cfg["skip"]:
             if phrase.lower() in page_text.lower():
-                print(f"  [INFO] Skip phrase found: '{phrase}' - returning empty")
-                return None
-        table = best_table(soup, skip_phrases)
+                print(f"  [INFO] Skip phrase found: '{phrase}' - no data for {label}")
+                skip_hit = True
+                break
+        if skip_hit:
+            results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+            continue
+
+        table = best_table(soup, src_cfg["skip"])
         if table is None:
-            print(f"  [WARN] No suitable table found for {label}")
-            title = soup.find("title")
-            print(f"  [DEBUG] Page title: {title.get_text() if title else 'N/A'}")
-            print(f"  [DEBUG] Page text snippet: {page_text[:500]}")
-            return None
+            print(f"  [WARN] No table found for {label}")
+            print(f"  [DEBUG] Page snippet: {page_text[:300]}")
+            results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+            continue
+
         headers = extract_headers(table)
         if not headers:
-            print(f"  [WARN] Could not extract headers for {label}")
-            return None
+            print(f"  [WARN] No headers for {label}")
+            results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+            continue
+
         rows = extract_rows(table, headers)
-        if not rows:
-            print(f"  [INFO] Table found but no data rows for {label}")
-            return None
+        fresh = {"headers": headers, "rows": rows} if rows else None
+        prev = existing.get(src_key, {}).get(sport_key)
+        merged = merge(prev, fresh)
+        results[sport_key] = merged if merged else {"headers": [], "rows": []}
         print(f"  [OK] {label}: {len(headers)} cols, {len(rows)} rows")
-        return {"headers": headers, "rows": rows}
-    except Exception as e:
-        print(f"  [ERROR] {label}: {e}")
-        return None
+
+    return results
 
 def merge(existing, fresh):
     if fresh is None:
@@ -249,20 +246,12 @@ async def main():
         await page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
         await asyncio.sleep(3)
 
-        # Remove cookie consent overlay if present
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.5)
 
-        # Debug: log what login-related elements exist on the page
         login_info = await page.evaluate("""() => {
             const results = {};
             results.modalLogin = !!document.querySelector('.modal-login');
-            results.modalLoginVisible = (() => {
-                const el = document.querySelector('.modal-login');
-                if (!el) return false;
-                const s = window.getComputedStyle(el);
-                return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
-            })();
             results.loginBtns = Array.from(document.querySelectorAll('a, button')).filter(
                 el => el.textContent.toLowerCase().includes('log') || el.textContent.toLowerCase().includes('sign')
             ).map(el => ({ tag: el.tagName, text: el.textContent.trim().slice(0,40), cls: el.className }));
@@ -273,9 +262,7 @@ async def main():
         }""")
         print(f"  [DEBUG] Login page info: {login_info}")
 
-        # Try clicking a visible login link/button to open the modal
         triggered = await page.evaluate("""() => {
-            // Look for a nav/header login link
             const candidates = Array.from(document.querySelectorAll('a, button, [role=button]'));
             for (const el of candidates) {
                 const t = el.textContent.toLowerCase().trim();
@@ -284,7 +271,6 @@ async def main():
                     return 'clicked: ' + el.tagName + ' "' + el.textContent.trim() + '"';
                 }
             }
-            // Fallback: force the modal visible directly
             const modal = document.querySelector('.modal-login');
             if (modal) {
                 modal.style.cssText = 'display:block !important; opacity:1 !important; visibility:visible !important;';
@@ -295,11 +281,8 @@ async def main():
         print(f"  [DEBUG] Login trigger result: {triggered}")
         await asyncio.sleep(2)
 
-        # Remove overlay again in case it reappeared
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
 
-        # KillerSports new login UI: type=text with class 'input' for email,
-        # type=password with class 'password mb-48' for password
         try:
             await page.wait_for_selector(
                 "input[type='email'], input[name='email'], input.input",
@@ -315,14 +298,11 @@ async def main():
             print(f"  [DEBUG] All inputs on page: {visible}")
             raise
 
-        # Email field (new UI uses type=text with class 'input')
         await page.fill("input[type='email'], input[name='email'], input.input", email)
-        # Password field (new UI uses class 'password mb-48')
         await page.fill("input[type='password'], input.password", password)
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.3)
 
-        # Click submit — try all common patterns
         await page.evaluate("""() => {
             const btn = document.querySelector('.modal-login .button-primary')
                      || document.querySelector('button[type=submit]')
@@ -341,24 +321,7 @@ async def main():
         }
 
         for src_key, src_cfg in SOURCES.items():
-            if src_cfg.get("tab_based"):
-                # Navigate to the page once, then click tabs for each sport
-                await page.goto(src_cfg["url"], wait_until="networkidle", timeout=60000)
-                await asyncio.sleep(3)
-                for sport_key, sport_label in src_cfg["filters"].items():
-                    label = f"{src_key}/{sport_key}"
-                    fresh = await scrape_tab(page, src_cfg["url"], sport_label, src_cfg["skip"], label)
-                    prev  = existing.get(src_key, {}).get(sport_key)
-                    merged = merge(prev, fresh)
-                    result[src_key][sport_key] = merged if merged else {"headers": [], "rows": []}
-            else:
-                for sport_key, sport_label in src_cfg["filters"].items():
-                    url   = src_cfg["url"].replace("{sport}", sport_label)
-                    label = f"{src_key}/{sport_key}"
-                    fresh = await scrape(page, url, src_cfg["skip"], label)
-                    prev  = existing.get(src_key, {}).get(sport_key)
-                    merged = merge(prev, fresh)
-                    result[src_key][sport_key] = merged if merged else {"headers": [], "rows": []}
+            result[src_key] = await scrape_source(page, src_key, src_cfg, existing)
 
         await browser.close()
 
