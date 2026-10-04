@@ -139,8 +139,16 @@ async def scrape_source(page, src_key, src_cfg, existing):
     print(f"\n====== Source: {src_key} ({src_cfg['url']}) ======")
     results = {}
 
-    await page.goto(src_cfg["url"], wait_until="networkidle", timeout=60000)
-    await asyncio.sleep(3)
+    try:
+        await page.goto(src_cfg["url"], wait_until="domcontentloaded", timeout=30000)
+        # Give JS time to render but don't wait for networkidle (can hang forever)
+        await asyncio.sleep(5)
+    except Exception as e:
+        print(f"  [ERROR] Failed to load {src_cfg['url']}: {e}")
+        for sport_label in src_cfg["sports"]:
+            sport_key = src_cfg["sport_keys"][sport_label]
+            results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+        return results
 
     # Debug: show what tabs are available
     tabs = await page.evaluate("""() => {
@@ -159,7 +167,10 @@ async def scrape_source(page, src_key, src_cfg, existing):
         label = f"{src_key}/{sport_key}"
         print(f"\n--- Tab: {label} (clicking '{sport_label}') ---")
 
-        click_result = await click_sport_tab(page, sport_label)
+        try:
+            click_result = await asyncio.wait_for(click_sport_tab(page, sport_label), timeout=10)
+        except asyncio.TimeoutError:
+            click_result = "timeout"
         print(f"  [DEBUG] Tab click: {click_result}")
 
         if click_result == 'not found':
@@ -243,7 +254,7 @@ async def main():
         page = await context.new_page()
 
         print("\n=== Logging in ===")
-        await page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
+        await page.goto("https://killersports.com", wait_until="domcontentloaded", timeout=30000)
         await asyncio.sleep(3)
 
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
