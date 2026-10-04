@@ -171,31 +171,86 @@ async def main():
         print("\n=== Logging in ===")
         await page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
         await asyncio.sleep(3)
+
+        # Remove cookie consent overlay if present
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.5)
-        await page.evaluate("""
-            if (typeof $ !== 'undefined') {
-                $('.modal-login').fadeIn();
-            } else {
-                var el = document.querySelector('.modal-login');
-                if (el) { el.style.display = 'block'; el.style.opacity = '1'; }
+
+        # Debug: log what login-related elements exist on the page
+        login_info = await page.evaluate("""() => {
+            const results = {};
+            results.modalLogin = !!document.querySelector('.modal-login');
+            results.modalLoginVisible = (() => {
+                const el = document.querySelector('.modal-login');
+                if (!el) return false;
+                const s = window.getComputedStyle(el);
+                return s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+            })();
+            results.loginBtns = Array.from(document.querySelectorAll('a, button')).filter(
+                el => el.textContent.toLowerCase().includes('log') || el.textContent.toLowerCase().includes('sign')
+            ).map(el => ({ tag: el.tagName, text: el.textContent.trim().slice(0,40), cls: el.className }));
+            results.inputs = Array.from(document.querySelectorAll('input[type=email], input[type=password], input[name=email], input[name=password]')).map(
+                el => ({ type: el.type, name: el.name, cls: el.className, visible: el.offsetParent !== null })
+            );
+            return results;
+        }""")
+        print(f"  [DEBUG] Login page info: {login_info}")
+
+        # Try clicking a visible login link/button to open the modal
+        triggered = await page.evaluate("""() => {
+            // Look for a nav/header login link
+            const candidates = Array.from(document.querySelectorAll('a, button, [role=button]'));
+            for (const el of candidates) {
+                const t = el.textContent.toLowerCase().trim();
+                if ((t === 'login' || t === 'log in' || t === 'sign in') && el.offsetParent !== null) {
+                    el.click();
+                    return 'clicked: ' + el.tagName + ' "' + el.textContent.trim() + '"';
+                }
             }
-        """)
-        await asyncio.sleep(1)
-        await page.wait_for_selector(
-            ".modal-login input[type='email'], .modal-login input[name='email']",
-            state="visible", timeout=10000
-        )
-        await page.fill(
-            ".modal-login input[type='email'], .modal-login input[name='email']", email
-        )
-        await page.fill(
-            ".modal-login input[type='password'], .modal-login input[name='password']", password
-        )
+            // Fallback: force the modal visible directly
+            const modal = document.querySelector('.modal-login');
+            if (modal) {
+                modal.style.cssText = 'display:block !important; opacity:1 !important; visibility:visible !important;';
+                return 'forced modal visible';
+            }
+            return 'no login trigger found';
+        }""")
+        print(f"  [DEBUG] Login trigger result: {triggered}")
+        await asyncio.sleep(2)
+
+        # Remove overlay again in case it reappeared
+        await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
+
+        # Wait for email input inside the modal (extended timeout)
+        try:
+            await page.wait_for_selector(
+                "input[type='email'], input[name='email']",
+                state="visible", timeout=15000
+            )
+        except Exception:
+            # Last resort: dump visible inputs for debugging
+            visible = await page.evaluate("""() =>
+                Array.from(document.querySelectorAll('input')).map(el => ({
+                    type: el.type, name: el.name, id: el.id,
+                    cls: el.className, visible: el.offsetParent !== null
+                }))
+            """)
+            print(f"  [DEBUG] All inputs on page: {visible}")
+            raise
+
+        await page.fill("input[type='email'], input[name='email']", email)
+        await page.fill("input[type='password'], input[name='password']", password)
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.3)
-        await page.click(".modal-login .button-primary")
-        await asyncio.sleep(4)
+
+        # Click the submit button inside whatever form is visible
+        await page.evaluate("""() => {
+            const btn = document.querySelector('.modal-login .button-primary')
+                     || document.querySelector('button[type=submit]')
+                     || document.querySelector('input[type=submit]');
+            if (btn) btn.click();
+        }""")
+        await asyncio.sleep(5)
         print("Login submitted")
 
         result = {
