@@ -207,18 +207,27 @@ async def main():
         print("\n=== Logging in ===")
         await page.goto("https://killersports.com", wait_until="networkidle", timeout=60000)
         await asyncio.sleep(3)
+        # Remove cookie consent overlay
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.5)
-        # Wait for jQuery to be available before calling it
-        await page.wait_for_function("typeof $ !== 'undefined'", timeout=15000)
-        await page.evaluate("$('.modal-login').fadeIn()")
+        # Open login modal — try jQuery if available, else force display via DOM
+        await page.evaluate("""
+            if (typeof $ !== 'undefined') {
+                $('.modal-login').fadeIn();
+            } else {
+                var el = document.querySelector('.modal-login');
+                if (el) { el.style.display = 'block'; el.style.opacity = '1'; }
+            }
+        """)
         await asyncio.sleep(1)
+        # Wait for the email input to be visible
+        await page.wait_for_selector(".modal-login input[type='email'], .modal-login input[name='email']", state="visible", timeout=10000)
         await page.fill(".modal-login input[type='email'], .modal-login input[name='email']", email)
         await page.fill(".modal-login input[type='password'], .modal-login input[name='password']", password)
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.3)
         await page.click(".modal-login .button-primary")
-        await asyncio.sleep(3)
+        await asyncio.sleep(4)
         print("Login submitted")
 
         result = {
