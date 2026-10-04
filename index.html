@@ -149,9 +149,10 @@
 
     <div class="card-label" style="margin-top:.75rem">Data source</div>
     <div class="sport-row" id="sourceRow">
-      <button class="sport-btn active" id="src-saved"  onclick="setSource('saved')">My Systems</button>
-      <button class="sport-btn"        id="src-ai"     onclick="setSource('ai')">AI Trends</button>
-      <button class="sport-btn"        id="src-kspro"  onclick="setSource('kspro')">KS Pro</button>
+      <button class="sport-btn active" id="src-saved"   onclick="setSource('saved')">My Systems</button>
+      <button class="sport-btn"        id="src-ai"      onclick="setSource('ai')">AI Trends</button>
+      <button class="sport-btn"        id="src-kspro"   onclick="setSource('kspro')">KS Pro</button>
+      <button class="sport-btn"        id="src-gameday" onclick="setSource('gameday')">GameDay</button>
     </div>
 
     <div class="filter-grid">
@@ -263,9 +264,10 @@
 
 <script>
 var allData   = {
-    saved:  { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
-    ai:     { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
-    kspro:  { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null }
+    saved:   { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
+    ai:      { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
+    kspro:   { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null },
+    gameday: { mlb: null, wnba: null, nfl: null, nba: null, nhl: null, ncaaf: null, ncaab: null }
   };
   var source = 'saved';
 var sport     = 'mlb';
@@ -355,7 +357,7 @@ var CHIPS = {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     var d = await r.json();
     ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
-      ['saved','ai','kspro'].forEach(function(src) {
+      ['saved','ai','kspro','gameday'].forEach(function(src) {
         allData[src][s] = (d[src] && d[src][s]) ? d[src][s] : { headers:[], rows:[] };
       });
     });
@@ -376,7 +378,7 @@ var CHIPS = {
 
 // ── Hidden cols init ──────────────────────────────
 function initHiddenCols() {
-  ['saved','ai','kspro'].forEach(function(src) {
+  ['saved','ai','kspro','gameday'].forEach(function(src) {
     hiddenCols[src] = {};
     ['mlb','wnba','nfl','nba','nhl','ncaaf','ncaab'].forEach(function(s) {
       hiddenCols[src][s] = new Set();
@@ -683,10 +685,10 @@ function esc(s) {
 var builderSport      = 'mlb';
 var builderSelections = {};
 var customTableData   = null;
-var SOURCE_LABELS = { saved:'My Systems', ai:'AI Trends', kspro:'KS Pro' };
-var SOURCE_COLORS = { saved:'var(--green)', ai:'var(--blue)', kspro:'var(--amber)' };
-var SOURCE_BDS    = { saved:'var(--gbd)',   ai:'var(--bbd)',  kspro:'var(--abd)' };
-var SOURCE_BGS    = { saved:'var(--gbg)',   ai:'var(--bbg)',  kspro:'var(--abg)' };
+var SOURCE_LABELS = { saved:'My Systems', ai:'AI Trends', kspro:'KS Pro', gameday:'GameDay' };
+var SOURCE_COLORS = { saved:'var(--green)', ai:'var(--blue)', kspro:'var(--amber)', gameday:'var(--purple)' };
+var SOURCE_BDS    = { saved:'var(--gbd)',   ai:'var(--bbd)',  kspro:'var(--abd)',   gameday:'var(--purple)' };
+var SOURCE_BGS    = { saved:'var(--gbg)',   ai:'var(--bbg)',  kspro:'var(--abg)',   gameday:'rgba(188,140,255,.12)' };
 
 function openBuilder() {
   builderSport = sport;
@@ -713,7 +715,7 @@ function setBuilderSport(s) {
 function renderBuilderSources() {
   var container = document.getElementById('builderSources');
   if (!container) return;
-  container.innerHTML = ['saved','ai','kspro'].map(function(src) {
+  container.innerHTML = ['saved','ai','kspro','gameday'].map(function(src) {
     var data    = allData[src] && allData[src][builderSport];
     var headers = (data && data.headers) ? data.headers : [];
     var color   = SOURCE_COLORS[src], bd = SOURCE_BDS[src], bg = SOURCE_BGS[src];
@@ -746,7 +748,7 @@ function applyBuilder() {
 
   // Use the first source that has data to determine base columns (Date, Team)
   var baseSource = null;
-  ['saved','ai','kspro'].forEach(function(src) {
+  ['saved','ai','kspro','gameday'].forEach(function(src) {
     if (!baseSource && allData[src] && allData[src][builderSport] && allData[src][builderSport].headers.length) {
       baseSource = src;
     }
@@ -769,7 +771,7 @@ function applyBuilder() {
 
   // Build game-pair rows — find matchups from the primary source
   var primarySrc = null;
-  ['saved','ai','kspro'].forEach(function(src) {
+  ['saved','ai','kspro','gameday'].forEach(function(src) {
     if (!primarySrc && allData[src] && allData[src][builderSport] && allData[src][builderSport].rows.length) {
       primarySrc = src;
     }
@@ -786,7 +788,7 @@ function applyBuilder() {
   // Build lookup: "team||date" -> { src -> row } keyed by both team AND date
   // This prevents a team appearing on multiple days from overwriting itself
   var teamLookup = {};
-  ['saved','ai','kspro'].forEach(function(src) {
+  ['saved','ai','kspro','gameday'].forEach(function(src) {
     var data = allData[src] && allData[src][builderSport];
     if (!data || !data.rows) return;
     var ti = data.headers.findIndex(function(h){ return /^team$/i.test(h.trim()); });
