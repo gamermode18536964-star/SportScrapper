@@ -221,14 +221,14 @@ async def main():
         # Remove overlay again in case it reappeared
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
 
-        # Wait for email input inside the modal (extended timeout)
+        # KillerSports new login UI: type=text with class 'input' for email,
+        # type=password with class 'password mb-48' for password
         try:
             await page.wait_for_selector(
-                "input[type='email'], input[name='email']",
+                "input[type='email'], input[name='email'], input.input",
                 state="visible", timeout=15000
             )
         except Exception:
-            # Last resort: dump visible inputs for debugging
             visible = await page.evaluate("""() =>
                 Array.from(document.querySelectorAll('input')).map(el => ({
                     type: el.type, name: el.name, id: el.id,
@@ -238,16 +238,21 @@ async def main():
             print(f"  [DEBUG] All inputs on page: {visible}")
             raise
 
-        await page.fill("input[type='email'], input[name='email']", email)
-        await page.fill("input[type='password'], input[name='password']", password)
+        # Email field (new UI uses type=text with class 'input')
+        await page.fill("input[type='email'], input[name='email'], input.input", email)
+        # Password field (new UI uses class 'password mb-48')
+        await page.fill("input[type='password'], input.password", password)
         await page.evaluate("document.getElementById('__abconsent-cmp')?.remove()")
         await asyncio.sleep(0.3)
 
-        # Click the submit button inside whatever form is visible
+        # Click submit — try all common patterns
         await page.evaluate("""() => {
             const btn = document.querySelector('.modal-login .button-primary')
                      || document.querySelector('button[type=submit]')
-                     || document.querySelector('input[type=submit]');
+                     || document.querySelector('input[type=submit]')
+                     || Array.from(document.querySelectorAll('button')).find(
+                            b => /log.?in|sign.?in|submit/i.test(b.textContent)
+                        );
             if (btn) btn.click();
         }""")
         await asyncio.sleep(5)
