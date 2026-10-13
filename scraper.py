@@ -339,5 +339,33 @@ async def main():
     with open("data.json", "w") as f:
         json.dump(result, f, separators=(",", ":"))
     print("\n=== data.json written ===")
+    return result
 
-asyncio.run(main())
+def has_data(result):
+    """Return True if any source/sport has at least one data row."""
+    for src_key in ("saved", "ai", "kspro", "gameday"):
+        src = result.get(src_key, {})
+        for sport_data in src.values():
+            if isinstance(sport_data, dict) and sport_data.get("rows"):
+                return True
+    return False
+
+async def run_with_retry():
+    MAX_ATTEMPTS = 5          # 8:30, 9:00, 9:30, 10:00, 10:30 AM PT
+    RETRY_DELAY  = 30 * 60   # 30 minutes in seconds
+
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        print(f"\n{'='*60}")
+        print(f"  ATTEMPT {attempt} of {MAX_ATTEMPTS}  ({datetime.now(timezone.utc).strftime('%H:%M UTC')})")
+        print(f"{'='*60}")
+        result = await main()
+        if has_data(result):
+            print(f"\n[OK] Data found on attempt {attempt}. Done.")
+            return
+        if attempt < MAX_ATTEMPTS:
+            print(f"\n[RETRY] No data found. Waiting 30 minutes before attempt {attempt + 1}...")
+            await asyncio.sleep(RETRY_DELAY)
+        else:
+            print(f"\n[WARN] No data found after {MAX_ATTEMPTS} attempts. Keeping existing data.json as-is.")
+
+asyncio.run(run_with_retry())
