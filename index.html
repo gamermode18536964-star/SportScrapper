@@ -168,7 +168,6 @@
           <option value="ou">Has OU pick</option>
           <option value="rl">Has RL pick</option>
           <option value="ats">Has ATS pick</option>
-          <option value="su">Has SU pick</option>
           <option value="any">Any pick</option>
         </select>
       </div>
@@ -293,7 +292,6 @@ var CHIPS = {
     { label:"Today's games", pick:'',    line:'',   today:true  },
     { label:'ATS picks',     pick:'ats', line:'',   today:false },
     { label:'OU picks',      pick:'ou',  line:'',   today:false },
-    { label:'SU picks',      pick:'su',  line:'',   today:false },
     { label:'Any pick',      pick:'any', line:'',   today:false },
     { label:'Favorites',     pick:'',    line:'fav',today:false },
     { label:'Underdogs',     pick:'',    line:'dog',today:false },
@@ -525,7 +523,6 @@ function getFiltered() {
   var ouIdx    = headers.findIndex(function(h){ return /^ou$/i.test(h.trim()); });
   var rlIdx    = headers.findIndex(function(h){ return /^rl$/i.test(h.trim()); });
   var atsIdx   = headers.findIndex(function(h){ return /^ats$/i.test(h.trim()); });
-  var suIdx    = headers.findIndex(function(h){ return /^su$/i.test(h.trim()); });
   var lineIdx  = headers.findIndex(function(h){ return /moneyline|spread|line/i.test(h) && !/total/i.test(h); });
   var dateIdx  = 0;
 
@@ -552,12 +549,11 @@ function getFiltered() {
     if (pickF) {
       var hasPick = function(idx) { return idx >= 0 && row[idx] && row[idx] !== '-' && row[idx] !== ''; };
       if (pickF === 'any') {
-        if (!hasPick(mlIdx) && !hasPick(ouIdx) && !hasPick(rlIdx) && !hasPick(atsIdx) && !hasPick(suIdx)) return false;
+        if (!hasPick(mlIdx) && !hasPick(ouIdx) && !hasPick(rlIdx) && !hasPick(atsIdx)) return false;
       } else if (pickF === 'ml'  && !hasPick(mlIdx))  return false;
       else if   (pickF === 'ou'  && !hasPick(ouIdx))  return false;
       else if   (pickF === 'rl'  && !hasPick(rlIdx))  return false;
       else if   (pickF === 'ats' && !hasPick(atsIdx)) return false;
-      else if   (pickF === 'su'  && !hasPick(suIdx))  return false;
     }
 
     // Line filter
