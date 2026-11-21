@@ -1,8 +1,8 @@
-name: Fetch Data & Deploy
+name: Fetch Sports Data
 
 on:
   schedule:
-    - cron: '30 15 * * *'
+    - cron: '30 15 * * *'   # 8:30 AM PT (UTC-7 PDT) / 7:30 AM PST
   workflow_dispatch:
 
 permissions:
@@ -10,19 +10,19 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  fetch-and-deploy:
+  fetch:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -31,28 +31,39 @@ jobs:
           pip install --break-system-packages playwright beautifulsoup4
           playwright install chromium
 
-      - name: Fetch data
+      - name: Run scraper
         env:
-          KS_EMAIL:    ${{ secrets.KS_EMAIL }}
+          KS_EMAIL: ${{ secrets.KS_EMAIL }}
           KS_PASSWORD: ${{ secrets.KS_PASSWORD }}
         run: python scraper.py
 
-      - name: Commit data
+      - name: Commit data.json
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
           git diff --cached --quiet || git commit -m "chore: update data.json [skip ci]"
-          git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git push
 
-      - name: Configure Pages
+  deploy:
+    needs: fetch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main   # pick up the freshly committed data.json
+
+      - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: .
 
       - name: Deploy to GitHub Pages
-        id: deploy
+        id: deployment
         uses: actions/deploy-pages@v4
