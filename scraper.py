@@ -113,18 +113,42 @@ def extract_rows(table, headers):
     return rows
 
 async def click_sport_tab(page, sport_label):
-    """Click the tab for the given sport label. Returns what was clicked or 'not found'."""
+    """Click the tab for the given sport label. Returns what was clicked or 'not found'.
+
+    Explicitly excludes nav/header elements to avoid hitting the global navigation
+    links (e.g. 'Contests▶NFL') instead of the page's own sport filter tabs.
+    """
     result = await page.evaluate(f"""() => {{
         const target = {json.dumps(sport_label)}.toUpperCase();
-        // Try tab/filter elements
+
+        // Elements that are part of the site-wide navigation — never click these
+        function isNavElement(el) {{
+            let node = el;
+            while (node) {{
+                const tag = (node.tagName || '').toLowerCase();
+                const cls = (node.className || '').toLowerCase();
+                const role = (node.getAttribute ? node.getAttribute('role') || '' : '').toLowerCase();
+                if (tag === 'nav' || tag === 'header') return true;
+                if (cls.includes('navbar') || cls.includes('nav-bar') ||
+                    cls.includes('site-nav') || cls.includes('main-nav') ||
+                    cls.includes('top-nav') || cls.includes('menu') ||
+                    cls.includes('sidebar') || cls.includes('dropdown-menu')) return true;
+                node = node.parentElement;
+            }}
+            return false;
+        }}
+
+        // Page-level tab/filter selectors only (not nav links)
         const selectors = [
-            'a', 'button', 'li', '[role=tab]',
-            '.tab', '.filter-btn', '.sport-tab', '.nav-link',
-            '.nav-item', '.pill', '.chip', 'span'
+            '[role=tab]',
+            '.tab', '.filter-btn', '.sport-tab', '.pill', '.chip',
+            'button', 'li', 'span', 'a'
         ];
         for (const sel of selectors) {{
             for (const el of document.querySelectorAll(sel)) {{
-                if (el.textContent.trim().toUpperCase() === target && el.offsetParent !== null) {{
+                if (el.textContent.trim().toUpperCase() === target
+                    && el.offsetParent !== null
+                    && !isNavElement(el)) {{
                     el.click();
                     return 'clicked:' + sel + ':' + el.textContent.trim();
                 }}
@@ -150,17 +174,35 @@ async def scrape_source(page, src_key, src_cfg, existing):
             results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
         return results
 
-    # Debug: show what tabs are available
+    # Confirm we're actually on the right page (not stuck on a nav-redirected page)
+    current_url = page.url
+    print(f"  [DEBUG] Current URL after navigation: {current_url}")
+
+    # Debug: show non-nav tabs available on the page
     tabs = await page.evaluate("""() => {
+        function isNavElement(el) {
+            let node = el;
+            while (node) {
+                const tag = (node.tagName || '').toLowerCase();
+                const cls = (node.className || '').toLowerCase();
+                if (tag === 'nav' || tag === 'header') return true;
+                if (cls.includes('navbar') || cls.includes('nav-bar') ||
+                    cls.includes('site-nav') || cls.includes('main-nav') ||
+                    cls.includes('top-nav') || cls.includes('menu') ||
+                    cls.includes('sidebar') || cls.includes('dropdown-menu')) return true;
+                node = node.parentElement;
+            }
+            return false;
+        }
         return Array.from(document.querySelectorAll(
-            'a, button, li, [role=tab], .tab, .filter-btn, .nav-link, .nav-item, .pill, .chip'
+            'a, button, li, [role=tab], .tab, .filter-btn, .pill, .chip'
         ))
-        .filter(el => el.offsetParent !== null && el.textContent.trim().length < 20)
+        .filter(el => el.offsetParent !== null && el.textContent.trim().length < 20 && !isNavElement(el))
         .map(el => el.textContent.trim())
         .filter((v, i, a) => v && a.indexOf(v) === i)
         .slice(0, 40);
     }""")
-    print(f"  [DEBUG] Available tabs on page: {tabs}")
+    print(f"  [DEBUG] Available page tabs (non-nav): {tabs}")
 
     for sport_label in src_cfg["sports"]:
         sport_key = src_cfg["sport_keys"][sport_label]
@@ -180,6 +222,24 @@ async def scrape_source(page, src_key, src_cfg, existing):
 
         # Wait for table to update after tab click
         await asyncio.sleep(2)
+
+        # Safety check: if clicking the tab navigated us away, go back
+        if page.url != src_cfg["url"] and src_cfg["url"] in page.url is False:
+            print(f"  [WARN] Tab click navigated away to {page.url} — re-navigating to source")
+            try:
+                await page.goto(src_cfg["url"], wait_until="domcontentloaded", timeout=30000)
+                await asyncio.sleep(3)
+                # Try the tab click again after re-navigating
+                try:
+                    click_result2 = await asyncio.wait_for(click_sport_tab(page, sport_label), timeout=10)
+                except asyncio.TimeoutError:
+                    click_result2 = "timeout"
+                print(f"  [DEBUG] Re-nav tab click: {click_result2}")
+                await asyncio.sleep(2)
+            except Exception as e:
+                print(f"  [ERROR] Re-navigation failed: {e}")
+                results[sport_key] = existing.get(src_key, {}).get(sport_key) or {"headers": [], "rows": []}
+                continue
 
         html = await page.content()
         soup = BeautifulSoup(html, "html.parser")
